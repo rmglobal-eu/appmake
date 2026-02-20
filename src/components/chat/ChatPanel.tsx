@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState, useEffect } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import { MessageList } from "./MessageList";
@@ -10,6 +10,7 @@ import { useChatStore } from "@/lib/stores/chat-store";
 import { useEditorStore } from "@/lib/stores/editor-store";
 import { useUpdateCardStore } from "@/lib/stores/update-card-store";
 import { usePreviewErrorStore } from "@/lib/stores/preview-error-store";
+import { useGhostFix } from "@/hooks/useGhostFix";
 import { MessageParser } from "@/lib/parser/message-parser";
 import type { ChatMessage } from "@/types/chat";
 import type { UpdateCard } from "@/types/update-card";
@@ -67,8 +68,8 @@ export function ChatPanel({ chatId, initialMessages = [] }: ChatPanelProps) {
   const streamingParserRef = useRef<MessageParser | null>(null);
   const subtaskCounterRef = useRef(0);
 
-  // Auto-fix refs
-  const autoFixTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Silent ghost-fix for preview errors (replaces old auto-fix)
+  useGhostFix();
 
   // Initialize messages from props
   if (messages.length === 0 && initialMessages.length > 0) {
@@ -98,9 +99,9 @@ export function ChatPanel({ chatId, initialMessages = [] }: ChatPanelProps) {
       // Capture previous files for revert
       const previousFiles = { ...useEditorStore.getState().generatedFiles };
 
-      // Clear previous errors
+      // Clear previous errors and reset ghost fix
       usePreviewErrorStore.getState().clearErrors();
-      usePreviewErrorStore.getState().resetAutoFixAttempts();
+      usePreviewErrorStore.getState().resetGhostFixAttempts();
 
       const abortController = new AbortController();
       abortRef.current = abortController;
@@ -275,48 +276,6 @@ export function ChatPanel({ chatId, initialMessages = [] }: ChatPanelProps) {
     [chatId, messages, selectedModel, planMode, addMessage, setIsStreaming]
   );
 
-  // Auto-fix: watch for preview errors
-  useEffect(() => {
-    const unsub = usePreviewErrorStore.subscribe((state: ReturnType<typeof usePreviewErrorStore.getState>, prev: ReturnType<typeof usePreviewErrorStore.getState>) => {
-      if (
-        state.errors.length > prev.errors.length &&
-        state.autoFixEnabled &&
-        !state.autoFixInProgress &&
-        state.autoFixAttempts < 3 &&
-        !isStreaming
-      ) {
-        // Debounce 2s
-        if (autoFixTimerRef.current) clearTimeout(autoFixTimerRef.current);
-        autoFixTimerRef.current = setTimeout(() => {
-          const { errors, autoFixAttempts, autoFixEnabled, autoFixInProgress } =
-            usePreviewErrorStore.getState();
-          if (
-            errors.length > 0 &&
-            autoFixEnabled &&
-            !autoFixInProgress &&
-            autoFixAttempts < 3 &&
-            !useChatStore.getState().isStreaming
-          ) {
-            const latestError = errors[errors.length - 1];
-            usePreviewErrorStore.getState().setAutoFixInProgress(true);
-            usePreviewErrorStore.getState().incrementAutoFixAttempts();
-
-            handleSend(
-              `The preview has an error that needs to be fixed:\n\n\`\`\`\n${latestError.message}\n\`\`\`\n\nPlease fix this error.`
-            ).finally(() => {
-              usePreviewErrorStore.getState().setAutoFixInProgress(false);
-            });
-          }
-        }, 2000);
-      }
-    });
-
-    return () => {
-      unsub();
-      if (autoFixTimerRef.current) clearTimeout(autoFixTimerRef.current);
-    };
-  }, [isStreaming, handleSend]);
-
   const handleStop = useCallback(() => {
     abortRef.current?.abort();
   }, []);
@@ -336,22 +295,6 @@ export function ChatPanel({ chatId, initialMessages = [] }: ChatPanelProps) {
     },
     [handleSend]
   );
-
-  // Watch for manual "Fix with AI" button clicks from PreviewErrorBanner
-  useEffect(() => {
-    const unsub = usePreviewErrorStore.subscribe((state: ReturnType<typeof usePreviewErrorStore.getState>, prev: ReturnType<typeof usePreviewErrorStore.getState>) => {
-      if (state.pendingManualFix && !prev.pendingManualFix && !useChatStore.getState().isStreaming) {
-        const msg = usePreviewErrorStore.getState().consumeManualFix();
-        if (msg) {
-          usePreviewErrorStore.getState().incrementAutoFixAttempts();
-          handleSend(
-            `The preview has an error that needs to be fixed:\n\n\`\`\`\n${msg}\n\`\`\`\n\nPlease fix this error.`
-          );
-        }
-      }
-    });
-    return () => unsub();
-  }, [handleSend]);
 
   return (
     <div className="flex h-full flex-col">

@@ -4,11 +4,12 @@ import { useCallback, useMemo } from "react";
 import { FileTree } from "@/components/editor/FileTree";
 import { CodeEditor } from "@/components/editor/CodeEditor";
 import { LivePreview } from "@/components/preview/LivePreview";
+import { PreviewLoadingOverlay } from "@/components/preview/PreviewLoadingOverlay";
 import { VisualEditorOverlay } from "@/components/visual-editor/VisualEditorOverlay";
 import { useEditorStore, buildFileTree } from "@/lib/stores/editor-store";
 import { useBuilderStore } from "@/lib/stores/builder-store";
 import { ConsolePanel } from "@/components/preview/ConsolePanel";
-import { Code2, TerminalSquare } from "lucide-react";
+import { TerminalSquare } from "lucide-react";
 
 interface WorkbenchProps {
   refreshKey?: number;
@@ -41,12 +42,8 @@ export function Workbench({ refreshKey = 0 }: WorkbenchProps) {
 
   if (fileCount === 0) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <div className="text-center text-muted-foreground">
-          <Code2 className="mx-auto mb-3 h-12 w-12 opacity-30" />
-          <p className="text-base font-medium">No files yet</p>
-          <p className="mt-1 text-sm">Chat with AI to generate code</p>
-        </div>
+      <div className="relative flex h-full items-center justify-center">
+        <PreviewLoadingOverlay />
       </div>
     );
   }
@@ -94,6 +91,8 @@ export function Workbench({ refreshKey = 0 }: WorkbenchProps) {
           <div className="absolute inset-0">
             <LivePreview refreshKey={refreshKey} />
           </div>
+          {/* Loading overlay on top of preview */}
+          <PreviewLoadingOverlay />
         </div>
         {/* Console toggle */}
         <div className="flex items-center border-t px-2 py-0.5 shrink-0">
@@ -128,6 +127,8 @@ export function Workbench({ refreshKey = 0 }: WorkbenchProps) {
             <LivePreview refreshKey={refreshKey} />
           </div>
         </div>
+        {/* Loading overlay on top of preview */}
+        <PreviewLoadingOverlay />
       </div>
       <div className="flex items-center border-t px-2 py-0.5 shrink-0">
         <button

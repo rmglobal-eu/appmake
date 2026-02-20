@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useEffect, useRef, useCallback, useState } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { useEditorStore } from "@/lib/stores/editor-store";
 import { useBuilderStore, type SelectedElement } from "@/lib/stores/builder-store";
 import { usePreviewErrorStore } from "@/lib/stores/preview-error-store";
@@ -20,35 +20,65 @@ export function LivePreview({
   const { setSelectedElement } = useBuilderStore();
   const { addError, addConsoleLog, clearErrors } = usePreviewErrorStore();
   const [iframeSrc, setIframeSrc] = useState<string>("about:blank");
-  const blobUrlRef = useRef<string | null>(null);
+  // Keep track of current and previous blob URLs
+  // Only revoke the old-old URL when a new one is created, so the iframe
+  // always has a valid URL to display during transitions
+  const currentBlobRef = useRef<string | null>(null);
+  const previousBlobRef = useRef<string | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fileCount = Object.keys(generatedFiles).length;
 
-  // Build preview HTML → write to blob URL
+  // Build preview HTML -> blob URL with debounce
   useEffect(() => {
-    const html = buildPreviewHtml(generatedFiles, visualEditorMode);
-
-    // Cleanup previous blob
-    if (blobUrlRef.current) {
-      URL.revokeObjectURL(blobUrlRef.current);
-      blobUrlRef.current = null;
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
     }
 
-    if (!html) {
-      setIframeSrc("about:blank");
-      return;
-    }
+    debounceRef.current = setTimeout(() => {
+      const html = buildPreviewHtml(generatedFiles, visualEditorMode);
 
-    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    blobUrlRef.current = url;
-    setIframeSrc(url);
+      if (!html) {
+        // Don't blank out if we previously had content
+        if (fileCount === 0 && currentBlobRef.current) {
+          // Cleanup both URLs
+          if (previousBlobRef.current) URL.revokeObjectURL(previousBlobRef.current);
+          if (currentBlobRef.current) URL.revokeObjectURL(currentBlobRef.current);
+          previousBlobRef.current = null;
+          currentBlobRef.current = null;
+          setIframeSrc("about:blank");
+        }
+        return;
+      }
+
+      const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+
+      // Revoke the old-old URL (two generations back)
+      // This ensures the current iframe URL stays valid during the transition
+      if (previousBlobRef.current) {
+        URL.revokeObjectURL(previousBlobRef.current);
+      }
+
+      // Shift: current becomes previous, new becomes current
+      previousBlobRef.current = currentBlobRef.current;
+      currentBlobRef.current = url;
+      setIframeSrc(url);
+    }, 300);
 
     return () => {
-      if (blobUrlRef.current) {
-        URL.revokeObjectURL(blobUrlRef.current);
-        blobUrlRef.current = null;
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
       }
     };
-  }, [generatedFiles, refreshKey, visualEditorMode]);
+  }, [generatedFiles, refreshKey, visualEditorMode, fileCount]);
+
+  // Cleanup all blob URLs on unmount
+  useEffect(() => {
+    return () => {
+      if (previousBlobRef.current) URL.revokeObjectURL(previousBlobRef.current);
+      if (currentBlobRef.current) URL.revokeObjectURL(currentBlobRef.current);
+    };
+  }, []);
 
   // Listen for visual editor messages from iframe
   useEffect(() => {
@@ -67,16 +97,21 @@ export function LivePreview({
     return () => window.removeEventListener("message", handleMessage);
   }, [visualEditorMode, setSelectedElement]);
 
-  // Listen for error + console messages from iframe
+  // Listen for error + console + preview-ready messages from iframe
   useEffect(() => {
     function handleMessage(e: MessageEvent) {
       if (!e.data) return;
+      if (e.data.type === "preview-ready") {
+        usePreviewErrorStore.getState().setPreviewHealthy(true);
+      }
       if (e.data.type === "preview-error") {
         addError({
           message: e.data.payload.message,
           source: e.data.payload.source,
           line: e.data.payload.line,
           col: e.data.payload.col,
+          isBuildError: e.data.payload.isBuildError,
+          stack: e.data.payload.stack,
         });
       }
       if (e.data.type === "preview-console") {
@@ -90,14 +125,15 @@ export function LivePreview({
     return () => window.removeEventListener("message", handleMessage);
   }, [addError, addConsoleLog]);
 
-  // Clear errors when a new preview iframe loads (blob URL changes)
+  // Clear errors and reset preview health when a new preview loads
   useEffect(() => {
     if (iframeSrc !== "about:blank") {
       clearErrors();
+      usePreviewErrorStore.getState().setPreviewHealthy(false);
     }
   }, [iframeSrc, clearErrors]);
 
-  if (Object.keys(generatedFiles).length === 0) {
+  if (fileCount === 0) {
     return (
       <div className="flex h-full items-center justify-center bg-muted/30">
         <p className="text-sm text-muted-foreground">No preview available</p>
@@ -110,7 +146,7 @@ export function LivePreview({
       <iframe
         key={`preview-${refreshKey}`}
         src={iframeSrc}
-        className="absolute inset-0 h-full w-full border-none bg-white"
+        className="h-full w-full border-none bg-white"
         title="Live Preview"
         allow="cross-origin-isolated"
       />

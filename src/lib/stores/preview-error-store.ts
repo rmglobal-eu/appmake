@@ -1,11 +1,15 @@
 import { create } from "zustand";
 
+export type GhostFixStatus = "idle" | "fixing" | "verifying" | "success" | "failed";
+
 export interface PreviewError {
   id: string;
   message: string;
   source?: string;
   line?: number;
   col?: number;
+  isBuildError?: boolean;
+  stack?: string;
   timestamp: number;
 }
 
@@ -19,22 +23,23 @@ export interface ConsoleLog {
 interface PreviewErrorStore {
   errors: PreviewError[];
   consoleLogs: ConsoleLog[];
-  autoFixEnabled: boolean;
-  autoFixInProgress: boolean;
-  autoFixAttempts: number;
-  /** Set by "Fix with AI" button, consumed by ChatPanel */
-  pendingManualFix: string | null;
+  ghostFixStatus: GhostFixStatus;
+  previewHealthy: boolean;
+  ghostFixAttempts: number;
 
   addError: (error: Omit<PreviewError, "id" | "timestamp">) => void;
   addConsoleLog: (log: Omit<ConsoleLog, "id" | "timestamp">) => void;
   clearErrors: () => void;
   clearConsoleLogs: () => void;
-  setAutoFixEnabled: (enabled: boolean) => void;
-  setAutoFixInProgress: (inProgress: boolean) => void;
-  incrementAutoFixAttempts: () => void;
-  resetAutoFixAttempts: () => void;
-  requestManualFix: (errorMessage: string) => void;
-  consumeManualFix: () => string | null;
+  setGhostFixStatus: (status: GhostFixStatus) => void;
+  setPreviewHealthy: (healthy: boolean) => void;
+  incrementGhostFixAttempts: () => void;
+  resetGhostFixAttempts: () => void;
+  /** Trigger a ghost fix from the "Fix with AI" button */
+  requestManualGhostFix: () => void;
+  /** Consumed by ghost-fix engine */
+  pendingManualGhostFix: boolean;
+  consumeManualGhostFix: () => boolean;
 }
 
 let errorCounter = 0;
@@ -43,10 +48,10 @@ let logCounter = 0;
 export const usePreviewErrorStore = create<PreviewErrorStore>((set, get) => ({
   errors: [],
   consoleLogs: [],
-  autoFixEnabled: true,
-  autoFixInProgress: false,
-  autoFixAttempts: 0,
-  pendingManualFix: null,
+  ghostFixStatus: "idle",
+  previewHealthy: false,
+  ghostFixAttempts: 0,
+  pendingManualGhostFix: false,
 
   addError: (error) =>
     set((state) => ({
@@ -66,15 +71,15 @@ export const usePreviewErrorStore = create<PreviewErrorStore>((set, get) => ({
 
   clearErrors: () => set({ errors: [] }),
   clearConsoleLogs: () => set({ consoleLogs: [] }),
-  setAutoFixEnabled: (autoFixEnabled) => set({ autoFixEnabled }),
-  setAutoFixInProgress: (autoFixInProgress) => set({ autoFixInProgress }),
-  incrementAutoFixAttempts: () =>
-    set((state) => ({ autoFixAttempts: state.autoFixAttempts + 1 })),
-  resetAutoFixAttempts: () => set({ autoFixAttempts: 0 }),
-  requestManualFix: (errorMessage) => set({ pendingManualFix: errorMessage }),
-  consumeManualFix: (): string | null => {
-    const msg = get().pendingManualFix;
-    if (msg) set({ pendingManualFix: null });
-    return msg;
+  setGhostFixStatus: (ghostFixStatus) => set({ ghostFixStatus }),
+  setPreviewHealthy: (previewHealthy) => set({ previewHealthy }),
+  incrementGhostFixAttempts: () =>
+    set((state) => ({ ghostFixAttempts: state.ghostFixAttempts + 1 })),
+  resetGhostFixAttempts: () => set({ ghostFixAttempts: 0 }),
+  requestManualGhostFix: () => set({ pendingManualGhostFix: true }),
+  consumeManualGhostFix: () => {
+    const pending = get().pendingManualGhostFix;
+    if (pending) set({ pendingManualGhostFix: false });
+    return pending;
   },
 }));

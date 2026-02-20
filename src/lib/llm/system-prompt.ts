@@ -47,6 +47,13 @@ When the user asks you to build something:
 3. Install dependencies
 4. Start the dev server
 
+CRITICAL CODE RULES:
+- NEVER ask the user to paste console errors, run npm commands, or debug — the system handles error detection automatically
+- If code has errors, fix them yourself — do not ask the user for debugging help
+- All files share ONE scope (no imports between files) — React hooks (useState, useEffect, etc.) are global variables
+- Avoid duplicate variable names across files — each component/variable name must be unique across all files
+- Use 'var' for top-level declarations when possible to avoid redeclaration issues
+
 Always write clean, modern code using best practices. Prefer TypeScript, React, and Tailwind CSS when appropriate.
 
 After your response, suggest 3-4 follow-up actions the user might want to take. Format them in a <suggestions> block with bullet points:
@@ -73,4 +80,37 @@ Your detailed plan in markdown format:
 After outputting the plan, STOP and wait for the user to approve it. Do NOT write any code or artifact blocks until the user says "Plan approved" or similar confirmation. Only after approval should you proceed with the actual implementation using artifact blocks.`
       : ""
   }`;
+}
+
+const BUILD_PIPELINE_CONTEXT = `The preview system works as follows:
+1. All .tsx/.jsx files are concatenated into a single scope (no module system)
+2. Import statements are stripped — React, useState, useEffect etc. are global variables
+3. Export statements are converted to plain declarations
+4. Top-level const/let are replaced with var to avoid redeclaration errors
+5. Babel transforms TypeScript + JSX to plain JavaScript
+6. The code runs inside a single <script> in an iframe
+7. Because all files share one scope, variable/function/class names MUST be unique across files`;
+
+export function getGhostFixSystemPrompt(buildContext?: string): string {
+  return `You are an automated code-fix system. You receive code files and an error, and you output ONLY fixed files.
+
+${BUILD_PIPELINE_CONTEXT}
+
+${buildContext ? `Additional context:\n${buildContext}\n` : ""}
+
+RULES:
+- Output ONLY artifact blocks with file actions — no conversation, no explanations, no questions
+- Fix the error by modifying the minimum number of files necessary
+- Provide the COMPLETE file content for each file you modify (not diffs)
+- Do NOT add import statements — they are stripped by the build pipeline
+- Do NOT use export default — use plain function/const declarations
+- Ensure all variable/function/class names are unique across all files
+- React hooks (useState, useEffect, useRef, etc.) are available as globals
+
+Output format:
+<artifact title="Fix preview error" id="ghost-fix">
+  <action type="file" filePath="filename.tsx">
+complete fixed file content
+  </action>
+</artifact>`;
 }

@@ -225,6 +225,7 @@ ${css}
 <body>
 <div id="__loading"><div class="spinner"></div>Loading preview...</div>
 <div id="root"></div>
+${errorBridgeScript}
 <!-- User code stored as plain text (browser won't execute it) -->
 <script type="text/plain" id="__appcode">
 ${escapedCode}
@@ -258,27 +259,74 @@ ${escapedCode}
   if (!codeEl) { showError('No code found.'); return; }
   var code = codeEl.textContent || '';
 
-  // Replace top-level const/let with var BEFORE Babel transform
-  // so duplicate declarations across concatenated files don't cause parse errors.
-  // Only matches unindented (top-level) declarations.
-  code = code.replace(/^(export\\s+)?(const|let) /gm, 'var ');
+  // Deduplication helper: scan lines, keep last declaration for each name
+  function deduplicateTopLevel(src) {
+    var lines = src.split('\\n');
+    var seen = {};
+    // First pass: record last index for each top-level name
+    for (var i = 0; i < lines.length; i++) {
+      var m = lines[i].match(/^(?:var|function|class)\\s+([A-Za-z_$][A-Za-z0-9_$]*)/);
+      if (m) seen[m[1]] = i;
+    }
+    // Second pass: remove earlier duplicates
+    var result = [];
+    for (var j = 0; j < lines.length; j++) {
+      var m2 = lines[j].match(/^(?:var|function|class)\\s+([A-Za-z_$][A-Za-z0-9_$]*)/);
+      if (m2 && seen[m2[1]] !== j) continue; // skip earlier duplicate
+      result.push(lines[j]);
+    }
+    return result.join('\\n');
+  }
 
-  try {
-    // Transform with typescript + react presets
-    var result = Babel.transform(code, {
-      presets: ['typescript', 'react'],
-      filename: 'app.tsx'
-    });
-    // Execute the transformed code
-    var fn = new Function(result.code);
-    fn();
-  } catch(e) {
-    showError(e.message || String(e));
-    console.error('Preview error:', e);
+  // 3-strategy cascade: try each, move to next on failure
+  var strategies = [
+    // Strategy 0: Top-level only const/let → var (current behavior)
+    function(c) { return c.replace(/^(export\\s+)?(const|let) /gm, 'var '); },
+    // Strategy 1: ALL const/let → var (aggressive)
+    function(c) { return c.replace(/\\b(const|let)\\s+/g, 'var '); },
+    // Strategy 2: ALL const/let → var + deduplicate top-level declarations
+    function(c) { return deduplicateTopLevel(c.replace(/\\b(const|let)\\s+/g, 'var ')); }
+  ];
+
+  var lastError = null;
+  var succeeded = false;
+
+  for (var si = 0; si < strategies.length; si++) {
+    try {
+      var processed = strategies[si](code);
+      var result = Babel.transform(processed, {
+        presets: ['typescript', 'react'],
+        filename: 'app.tsx'
+      });
+      var fn = new Function(result.code);
+      fn();
+      succeeded = true;
+      // Signal that code loaded and executed (preview has content)
+      requestAnimationFrame(function() {
+        requestAnimationFrame(function() {
+          window.parent.postMessage({ type: 'preview-ready' }, '*');
+        });
+      });
+      break;
+    } catch(e) {
+      lastError = e;
+    }
+  }
+
+  if (!succeeded) {
+    showError(lastError ? (lastError.message || String(lastError)) : 'Unknown error');
+    console.error('Preview error:', lastError);
+    window.parent.postMessage({
+      type: 'preview-error',
+      payload: {
+        message: lastError ? (lastError.message || String(lastError)) : 'Unknown error',
+        isBuildError: true,
+        stack: lastError && lastError.stack ? lastError.stack.slice(0, 500) : ''
+      }
+    }, '*');
   }
 })();
 <\/script>
-${errorBridgeScript}
 ${bridgeScript}
 </body>
 </html>`;
@@ -298,13 +346,25 @@ function getErrorBridgeScript(): string {
   }
 
   // Capture runtime errors
-  window.onerror = function(message, source, line, col) {
-    send('preview-error', { message: String(message), source: source, line: line, col: col });
+  window.onerror = function(message, source, line, col, error) {
+    send('preview-error', {
+      message: String(message),
+      source: source,
+      line: line,
+      col: col,
+      isBuildError: false,
+      stack: error && error.stack ? error.stack.slice(0, 500) : ''
+    });
   };
 
   // Capture unhandled promise rejections
   window.addEventListener('unhandledrejection', function(e) {
-    send('preview-error', { message: 'Unhandled rejection: ' + String(e.reason) });
+    var stack = e.reason && e.reason.stack ? e.reason.stack.slice(0, 500) : '';
+    send('preview-error', {
+      message: 'Unhandled rejection: ' + String(e.reason),
+      isBuildError: false,
+      stack: stack
+    });
   });
 
   // Override console methods to forward to parent
@@ -321,9 +381,9 @@ function getErrorBridgeScript(): string {
         catch(e) { args.push('[object]'); }
       }
       send('preview-console', { level: level, args: args });
-      if (level === 'error') {
-        send('preview-error', { message: args.join(' ') });
-      }
+      // NOTE: console.error does NOT send preview-error.
+      // Only window.onerror and unhandledrejection send preview-error.
+      // React dev mode fires many console.error warnings that are not real errors.
       origFn.apply(console, arguments);
     };
   }
