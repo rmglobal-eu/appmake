@@ -1,0 +1,26 @@
+# Main app
+appmake.dk {
+    reverse_proxy localhost:3000
+}
+
+# WebSocket server
+ws.appmake.dk {
+    reverse_proxy localhost:3001
+}
+
+# Wildcard preview subdomains
+*.preview.appmake.dk {
+    tls {
+        dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+    }
+
+    @sandbox {
+        header_regexp Host ^(?P<sandbox_id>[a-f0-9-]+)\.preview\.appmake\.dk$
+    }
+
+    # Route to the sandbox container's preview port
+    # The sandbox manager maps sandbox IDs to container ports
+    reverse_proxy @sandbox localhost:4000 {
+        header_up X-Sandbox-Id {re.Host.sandbox_id}
+    }
+}

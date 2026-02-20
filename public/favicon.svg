@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs><style>.cl{mix-blend-mode:multiply}</style></defs>
+  <circle cx="11.3" cy="11.3" r="8.3" fill="#EC4899" class="cl" opacity=".9"/>
+  <circle cx="20.7" cy="11.3" r="8.3" fill="#6366F1" class="cl" opacity=".86"/>
+  <circle cx="11.3" cy="20.7" r="8.3" fill="#F59E0B" class="cl" opacity=".82"/>
+  <circle cx="20.7" cy="20.7" r="8.3" fill="#EC4899" class="cl" opacity=".74"/>
+</svg>

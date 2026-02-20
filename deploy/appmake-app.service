@@ -1,0 +1,16 @@
+[Unit]
+Description=AppMake Application
+After=network.target docker.service postgresql.service
+Requires=docker.service
+
+[Service]
+Type=simple
+User=appmake
+WorkingDirectory=/opt/appmake
+ExecStart=/usr/bin/docker compose -f deploy/docker-compose.prod.yml up
+ExecStop=/usr/bin/docker compose -f deploy/docker-compose.prod.yml down
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
