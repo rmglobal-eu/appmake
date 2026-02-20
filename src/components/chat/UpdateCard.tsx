@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useMemo } from "react";
 import {
-  Package,
   Check,
   Loader2,
   FileCode,
@@ -12,6 +11,9 @@ import {
   ChevronRight,
   Undo2,
   Eye,
+  Sparkles,
+  FilePlus2,
+  FilePenLine,
 } from "lucide-react";
 import { useEditorStore } from "@/lib/stores/editor-store";
 import { useBuilderStore } from "@/lib/stores/builder-store";
@@ -30,11 +32,11 @@ interface UpdateCardProps {
 function SubtaskIcon({ type }: { type: string }) {
   switch (type) {
     case "file":
-      return <FileCode className="h-3 w-3 text-blue-400" />;
+      return <FileCode className="h-3.5 w-3.5 text-blue-400" />;
     case "shell":
-      return <Terminal className="h-3 w-3 text-yellow-400" />;
+      return <Terminal className="h-3.5 w-3.5 text-amber-400" />;
     case "start":
-      return <Play className="h-3 w-3 text-green-400" />;
+      return <Play className="h-3.5 w-3.5 text-green-400" />;
     default:
       return null;
   }
@@ -42,9 +44,17 @@ function SubtaskIcon({ type }: { type: string }) {
 
 function SubtaskStatus({ status }: { status: string }) {
   if (status === "completed") {
-    return <Check className="h-3 w-3 text-green-500" />;
+    return (
+      <div className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500/15">
+        <Check className="h-2.5 w-2.5 text-emerald-500" />
+      </div>
+    );
   }
-  return <Loader2 className="h-3 w-3 animate-spin text-blue-500" />;
+  return (
+    <div className="flex h-4 w-4 items-center justify-center">
+      <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-500" />
+    </div>
+  );
 }
 
 /** Minimal LCS diff */
@@ -92,14 +102,11 @@ export function UpdateCard({ card, title, actions, previousFiles }: UpdateCardPr
   const { setViewMode } = useBuilderStore();
   const [detailsOpen, setDetailsOpen] = useState(false);
 
-  // Use card data if available, else fall back to parsed actions
   const cardTitle = card?.title ?? title ?? "Update";
   const isStreaming = card?.status === "streaming";
 
   const subtasks: { id: string; label: string; type: string; status: string; filePath?: string }[] = useMemo(() => {
-    if (card) {
-      return card.subtasks;
-    }
+    if (card) return card.subtasks;
     if (actions) {
       return actions.map((a, i) => ({
         id: `action-${i}`,
@@ -115,9 +122,8 @@ export function UpdateCard({ card, title, actions, previousFiles }: UpdateCardPr
   const filesCreated = card?.filesCreated ?? 0;
   const filesModified = card?.filesModified ?? 0;
   const prevFiles = card?.previousFiles ?? previousFiles ?? {};
-
-  const fileCount = subtasks.filter((s) => s.type === "file").length;
-  const shellCount = subtasks.filter((s) => s.type !== "file").length;
+  const completedCount = subtasks.filter((s) => s.status === "completed").length;
+  const totalCount = subtasks.length;
 
   const handleSubtaskClick = useCallback(
     (subtask: { type: string; filePath?: string; label: string }) => {
@@ -134,20 +140,15 @@ export function UpdateCard({ card, title, actions, previousFiles }: UpdateCardPr
   const handleRevert = useCallback(() => {
     if (Object.keys(prevFiles).length === 0) return;
     const store = useEditorStore.getState();
-    // Restore all files from the previous snapshot
     store.addGeneratedFiles(prevFiles);
-    // Open the first file
     const firstPath = Object.keys(prevFiles)[0];
-    if (firstPath) {
-      store.openFile(firstPath, prevFiles[firstPath]);
-    }
+    if (firstPath) store.openFile(firstPath, prevFiles[firstPath]);
   }, [prevFiles]);
 
   const handlePreview = useCallback(() => {
     setViewMode("preview");
   }, [setViewMode]);
 
-  // Compute diffs for the details view
   const fileDiffs = useMemo(() => {
     if (!detailsOpen) return [];
     const diffs: {
@@ -176,50 +177,103 @@ export function UpdateCard({ card, title, actions, previousFiles }: UpdateCardPr
   }, [detailsOpen, subtasks, generatedFiles, prevFiles]);
 
   return (
-    <div className="rounded-lg border border-border/60 bg-card/50 overflow-hidden">
+    <div
+      className={`relative rounded-xl border overflow-hidden transition-all duration-300 ${
+        isStreaming
+          ? "border-primary/30 bg-gradient-to-b from-primary/5 to-card/80 shadow-lg shadow-primary/5"
+          : "border-border/50 bg-card/60"
+      }`}
+    >
+      {/* Animated top border during streaming */}
+      {isStreaming && (
+        <div className="absolute top-0 left-0 right-0 h-0.5 overflow-hidden">
+          <div
+            className="h-full w-1/3 rounded-full bg-gradient-to-r from-transparent via-primary to-transparent"
+            style={{ animation: "progress-indeterminate 1.5s ease-in-out infinite" }}
+          />
+        </div>
+      )}
+
       {/* Header */}
-      <div className="flex items-center gap-2 border-b border-border/40 px-3 py-2">
+      <div className="flex items-center gap-2.5 px-4 py-3">
         {isStreaming ? (
-          <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+          <div className="relative flex h-6 w-6 items-center justify-center">
+            <div className="absolute inset-0 animate-ping rounded-full bg-primary/15" />
+            <Sparkles className="relative h-4 w-4 text-primary animate-pulse" />
+          </div>
         ) : (
-          <Package className="h-3.5 w-3.5 text-primary" />
+          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/10">
+            <Check className="h-3.5 w-3.5 text-emerald-500" />
+          </div>
         )}
-        <span className="text-xs font-medium flex-1">{cardTitle}</span>
-        <span className="text-[10px] text-muted-foreground">
-          {filesCreated > 0 && `${filesCreated} created`}
-          {filesCreated > 0 && filesModified > 0 && ", "}
-          {filesModified > 0 && `${filesModified} modified`}
-          {filesCreated === 0 && filesModified === 0 && fileCount > 0 && `${fileCount} file${fileCount > 1 ? "s" : ""}`}
-          {shellCount > 0 && (fileCount > 0 || filesCreated > 0 || filesModified > 0 ? " \u00b7 " : "") + `${shellCount} cmd${shellCount > 1 ? "s" : ""}`}
-        </span>
+        <div className="flex-1 min-w-0">
+          <span className="text-sm font-semibold text-foreground">{cardTitle}</span>
+          {/* Stats summary */}
+          <div className="flex items-center gap-2 mt-0.5">
+            {filesCreated > 0 && (
+              <span className="flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400">
+                <FilePlus2 className="h-2.5 w-2.5" />
+                {filesCreated} created
+              </span>
+            )}
+            {filesModified > 0 && (
+              <span className="flex items-center gap-1 text-[10px] text-blue-600 dark:text-blue-400">
+                <FilePenLine className="h-2.5 w-2.5" />
+                {filesModified} modified
+              </span>
+            )}
+            {isStreaming && totalCount > 0 && (
+              <span className="text-[10px] text-muted-foreground">
+                {completedCount}/{totalCount} done
+              </span>
+            )}
+          </div>
+        </div>
       </div>
 
+      {/* Progress bar during streaming */}
+      {isStreaming && totalCount > 0 && (
+        <div className="mx-4 mb-2 h-1 rounded-full bg-primary/10 overflow-hidden">
+          <div
+            className="h-full rounded-full bg-primary transition-all duration-500 ease-out"
+            style={{ width: `${Math.max(5, (completedCount / totalCount) * 100)}%` }}
+          />
+        </div>
+      )}
+
       {/* Subtask list */}
-      <div className="divide-y divide-border/30">
-        {subtasks.map((subtask) => (
-          <button
-            key={subtask.id}
-            className={`flex w-full items-center gap-2 px-3 py-1.5 text-[11px] ${
-              subtask.type === "file"
-                ? "cursor-pointer hover:bg-accent/50"
-                : "cursor-default"
-            }`}
-            onClick={() => handleSubtaskClick(subtask)}
-          >
-            <SubtaskStatus status={subtask.status} />
-            <SubtaskIcon type={subtask.type} />
-            <span className="truncate font-mono text-muted-foreground">
-              {subtask.label}
-            </span>
-          </button>
-        ))}
-      </div>
+      {subtasks.length > 0 && (
+        <div className="border-t border-border/30 mx-2">
+          {subtasks.map((subtask) => (
+            <button
+              key={subtask.id}
+              className={`flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-xs transition-colors ${
+                subtask.type === "file"
+                  ? "cursor-pointer hover:bg-accent/50"
+                  : "cursor-default"
+              } ${subtask.status === "streaming" ? "bg-primary/5" : ""}`}
+              onClick={() => handleSubtaskClick(subtask)}
+            >
+              <SubtaskStatus status={subtask.status} />
+              <SubtaskIcon type={subtask.type} />
+              <span className="truncate font-mono text-[11px] text-muted-foreground">
+                {subtask.label}
+              </span>
+              {subtask.status === "streaming" && (
+                <span className="ml-auto shrink-0 text-[9px] font-medium text-primary">
+                  writing...
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Footer buttons */}
       {!isStreaming && subtasks.length > 0 && (
-        <div className="flex items-center gap-1 border-t border-border/40 px-2 py-1.5">
+        <div className="flex items-center gap-1 border-t border-border/30 px-3 py-2">
           <button
-            className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
             onClick={() => setDetailsOpen(!detailsOpen)}
           >
             {detailsOpen ? (
@@ -230,7 +284,7 @@ export function UpdateCard({ card, title, actions, previousFiles }: UpdateCardPr
             Details
           </button>
           <button
-            className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
             onClick={handlePreview}
           >
             <Eye className="h-3 w-3" />
@@ -238,7 +292,7 @@ export function UpdateCard({ card, title, actions, previousFiles }: UpdateCardPr
           </button>
           {Object.keys(prevFiles).length > 0 && (
             <button
-              className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] text-muted-foreground hover:bg-accent hover:text-foreground transition-colors ml-auto"
+              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors ml-auto"
               onClick={handleRevert}
             >
               <Undo2 className="h-3 w-3" />
@@ -250,15 +304,15 @@ export function UpdateCard({ card, title, actions, previousFiles }: UpdateCardPr
 
       {/* Diff details panel */}
       {detailsOpen && fileDiffs.length > 0 && (
-        <div className="border-t border-border/40 bg-muted/30">
+        <div className="border-t border-border/30 bg-muted/20">
           {fileDiffs.map((fd) => (
             <div key={fd.path} className="border-b border-border/20 last:border-b-0">
-              <div className="flex items-center gap-2 px-3 py-1.5">
+              <div className="flex items-center gap-2 px-3 py-2">
                 <FileCode className="h-3 w-3 text-muted-foreground" />
                 <span className="text-[11px] font-mono text-muted-foreground">{fd.path}</span>
                 {fd.isNew && (
-                  <span className="rounded bg-green-500/10 px-1.5 py-0.5 text-[9px] font-medium text-green-600">
-                    New file
+                  <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[9px] font-medium text-emerald-600 dark:text-emerald-400">
+                    New
                   </span>
                 )}
               </div>
@@ -275,7 +329,7 @@ export function UpdateCard({ card, title, actions, previousFiles }: UpdateCardPr
                         key={i}
                         className={
                           d.type === "added"
-                            ? "bg-green-500/10 text-green-700 dark:text-green-400"
+                            ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
                             : d.type === "removed"
                             ? "bg-red-500/10 text-red-700 dark:text-red-400"
                             : "text-muted-foreground"

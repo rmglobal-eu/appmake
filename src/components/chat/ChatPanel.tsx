@@ -63,6 +63,7 @@ export function ChatPanel({ chatId, initialMessages = [] }: ChatPanelProps) {
   const [streamingContent, setStreamingContent] = useState("");
   const [resolvedPlans, setResolvedPlans] = useState<Record<string, "approved" | "rejected">>({});
   const [liveCard, setLiveCard] = useState<UpdateCard | undefined>(undefined);
+  const [usageRefreshKey, setUsageRefreshKey] = useState(0);
   const abortRef = useRef<AbortController | null>(null);
   const { planMode } = useBuilderStore();
   const streamingParserRef = useRef<MessageParser | null>(null);
@@ -210,6 +211,14 @@ export function ChatPanel({ chatId, initialMessages = [] }: ChatPanelProps) {
           signal: abortController.signal,
         });
 
+        if (response.status === 429) {
+          const data = await response.json();
+          toast.error(
+            `Daily message limit reached (${data.used}/${data.limit}). Try again later.`
+          );
+          setUsageRefreshKey((k) => k + 1);
+          return;
+        }
         if (!response.ok) throw new Error("Chat request failed");
         if (!response.body) throw new Error("No response body");
 
@@ -271,6 +280,7 @@ export function ChatPanel({ chatId, initialMessages = [] }: ChatPanelProps) {
         streamingParserRef.current = null;
         updateCardStore.stopThinking();
         updateCardStore.setCurrentStreamingFile(null);
+        setUsageRefreshKey((k) => k + 1);
       }
     },
     [chatId, messages, selectedModel, planMode, addMessage, setIsStreaming]
@@ -316,6 +326,7 @@ export function ChatPanel({ chatId, initialMessages = [] }: ChatPanelProps) {
         isStreaming={isStreaming}
         selectedModel={selectedModel}
         onModelChange={setSelectedModel}
+        usageRefreshKey={usageRefreshKey}
       />
       <VersionHistory chatId={chatId} />
     </div>

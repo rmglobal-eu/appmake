@@ -8,9 +8,9 @@ interface UserMessageProps {
 
 export function UserMessage({ content }: UserMessageProps) {
   return (
-    <div className="px-4 py-3">
-      <div className="inline-block rounded-2xl bg-primary px-4 py-2 text-primary-foreground">
-        <p className="text-sm whitespace-pre-wrap">{content}</p>
+    <div className="flex justify-end px-4 py-2">
+      <div className="max-w-[85%] rounded-2xl rounded-br-md bg-primary px-4 py-2.5 text-primary-foreground shadow-sm">
+        <p className="text-sm leading-relaxed whitespace-pre-wrap">{content}</p>
       </div>
     </div>
   );

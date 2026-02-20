@@ -2,9 +2,11 @@ import { type ModelMessage } from "ai";
 import { streamChat } from "@/lib/llm/stream-chat";
 import { auth } from "@/lib/auth/config";
 import { db } from "@/lib/db";
-import { messages as messagesTable, chats } from "@/lib/db/schema";
+import { messages as messagesTable, chats, users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import type { ModelProvider } from "@/types/chat";
+
+const DAILY_LIMIT = 20;
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -28,6 +30,49 @@ export async function POST(req: Request) {
     projectContext?: string;
     planMode?: boolean;
   };
+
+  // ── Usage limit check ──────────────────────────────────────────────
+  const user = await db.query.users.findFirst({
+    where: eq(users.id, session.user.id),
+  });
+
+  if (!user) {
+    return new Response("User not found", { status: 404 });
+  }
+
+  let { dailyMessageCount, messageCountResetAt } = user;
+  const now = new Date();
+  const msSinceReset = now.getTime() - messageCountResetAt.getTime();
+  const twentyFourHours = 24 * 60 * 60 * 1000;
+
+  // Reset count if 24h have passed
+  if (msSinceReset >= twentyFourHours) {
+    dailyMessageCount = 0;
+    messageCountResetAt = now;
+    await db
+      .update(users)
+      .set({ dailyMessageCount: 0, messageCountResetAt: now })
+      .where(eq(users.id, session.user.id));
+  }
+
+  if (dailyMessageCount >= DAILY_LIMIT) {
+    const resetsAt = new Date(messageCountResetAt.getTime() + twentyFourHours);
+    return Response.json(
+      {
+        error: "daily_limit",
+        used: dailyMessageCount,
+        limit: DAILY_LIMIT,
+        resetsAt: resetsAt.toISOString(),
+      },
+      { status: 429 }
+    );
+  }
+
+  // Increment count
+  await db
+    .update(users)
+    .set({ dailyMessageCount: dailyMessageCount + 1 })
+    .where(eq(users.id, session.user.id));
 
   // Save user message
   const lastUserMessage = messages[messages.length - 1];

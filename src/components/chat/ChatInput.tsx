@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -30,12 +30,19 @@ import { toast } from "sonner";
 import { AVAILABLE_MODELS, type ModelOption } from "@/types/chat";
 import { useBuilderStore } from "@/lib/stores/builder-store";
 
+interface UsageData {
+  used: number;
+  limit: number;
+  resetsAt: string | null;
+}
+
 interface ChatInputProps {
   onSend: (message: string) => void;
   onStop?: () => void;
   isStreaming: boolean;
   selectedModel: ModelOption;
   onModelChange: (model: ModelOption) => void;
+  usageRefreshKey?: number;
 }
 
 export function ChatInput({
@@ -44,19 +51,30 @@ export function ChatInput({
   isStreaming,
   selectedModel,
   onModelChange,
+  usageRefreshKey,
 }: ChatInputProps) {
   const [input, setInput] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { planMode, setPlanMode, visualEditorActive, setVisualEditorActive } =
     useBuilderStore();
+  const [usage, setUsage] = useState<UsageData | null>(null);
+
+  useEffect(() => {
+    fetch("/api/usage")
+      .then((r) => r.json())
+      .then((data) => setUsage(data))
+      .catch(() => {});
+  }, [usageRefreshKey]);
+
+  const atLimit = usage !== null && usage.used >= usage.limit;
 
   const handleSend = useCallback(() => {
     const trimmed = input.trim();
-    if (!trimmed || isStreaming) return;
+    if (!trimmed || isStreaming || atLimit) return;
     onSend(trimmed);
     setInput("");
     textareaRef.current?.focus();
-  }, [input, isStreaming, onSend]);
+  }, [input, isStreaming, atLimit, onSend]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -124,7 +142,7 @@ export function ChatInput({
             <Button
               onClick={handleSend}
               size="icon"
-              disabled={!input.trim()}
+              disabled={!input.trim() || (usage !== null && usage.used >= usage.limit)}
               className="h-[44px] w-[44px] shrink-0"
             >
               <Send className="h-4 w-4" />
@@ -213,7 +231,54 @@ export function ChatInput({
             <TooltipContent>Voice input (coming soon)</TooltipContent>
           </Tooltip>
         </div>
+
+        {/* Usage indicator */}
+        {usage !== null && (
+          <UsageBar usage={usage} />
+        )}
       </div>
     </TooltipProvider>
+  );
+}
+
+function UsageBar({ usage }: { usage: UsageData }) {
+  const pct = Math.min((usage.used / usage.limit) * 100, 100);
+  const atLimit = usage.used >= usage.limit;
+
+  const barColor =
+    pct < 50
+      ? "bg-green-500"
+      : pct < 80
+        ? "bg-yellow-500"
+        : "bg-red-500";
+
+  // Time until reset
+  let resetLabel = "";
+  if (atLimit && usage.resetsAt) {
+    const ms = new Date(usage.resetsAt).getTime() - Date.now();
+    if (ms > 0) {
+      const h = Math.floor(ms / 3600000);
+      const m = Math.floor((ms % 3600000) / 60000);
+      resetLabel = `Resets in ${h}h ${m}m`;
+    }
+  }
+
+  return (
+    <div className="mt-1.5 space-y-1">
+      <div className="h-1 w-full rounded-full bg-muted overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all ${barColor}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+        <span>
+          {usage.used} / {usage.limit} messages
+        </span>
+        {resetLabel && (
+          <span className="text-red-500 font-medium">{resetLabel}</span>
+        )}
+      </div>
+    </div>
   );
 }

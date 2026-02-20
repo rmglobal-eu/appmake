@@ -6,6 +6,7 @@ import { AssistantMessage } from "./AssistantMessage";
 import { ThinkingIndicator } from "./ThinkingIndicator";
 import { SuggestionChips } from "./SuggestionChips";
 import { useUpdateCardStore } from "@/lib/stores/update-card-store";
+import { FileCode, Loader2 } from "lucide-react";
 import type { ChatMessage } from "@/types/chat";
 import type { UpdateCard } from "@/types/update-card";
 
@@ -37,13 +38,36 @@ export function MessageList({
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [suggestions, setSuggestions] = useState<string[]>([]);
+  const isStuckToBottom = useRef(true);
+  const prevMessagesLen = useRef(messages.length);
   const { currentStreamingFile, activeCardId } = useUpdateCardStore();
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, streamingContent]);
+  // Track whether user is scrolled to bottom
+  const handleScroll = useCallback(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    isStuckToBottom.current =
+      el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+  }, []);
 
-  // Clear suggestions when streaming starts
+  // New message added → smooth scroll
+  useEffect(() => {
+    if (messages.length > prevMessagesLen.current && isStuckToBottom.current) {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+    prevMessagesLen.current = messages.length;
+  }, [messages.length]);
+
+  // Streaming content updating → instant scroll via rAF
+  useEffect(() => {
+    if (!streamingContent || !isStuckToBottom.current) return;
+    const id = requestAnimationFrame(() => {
+      const el = containerRef.current;
+      if (el) el.scrollTop = el.scrollHeight;
+    });
+    return () => cancelAnimationFrame(id);
+  }, [streamingContent]);
+
   useEffect(() => {
     if (isStreaming) {
       setSuggestions([]);
@@ -65,6 +89,7 @@ export function MessageList({
   return (
     <div
       ref={containerRef}
+      onScroll={handleScroll}
       className="flex-1 overflow-y-auto"
     >
       <div className="pb-4">
@@ -98,18 +123,27 @@ export function MessageList({
           )
         )}
 
-        {/* Thinking indicator: show when streaming but no card yet */}
+        {/* Thinking indicator: show when streaming but no content yet */}
         {isStreaming && !activeCardId && !streamingContent && (
           <ThinkingIndicator />
         )}
 
-        {/* Streaming file indicator */}
+        {/* Streaming file indicator - prominent banner */}
         {isStreaming && currentStreamingFile && (
-          <div className="px-4 py-1">
-            <div className="flex items-center gap-2 rounded-md bg-primary/5 px-3 py-1.5">
-              <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-              <span className="text-[11px] font-mono text-muted-foreground truncate">
-                Writing {currentStreamingFile}...
+          <div className="px-4 py-2">
+            <div className="relative flex items-center gap-2.5 overflow-hidden rounded-lg border border-blue-500/20 bg-blue-500/5 px-3.5 py-2.5">
+              {/* Animated shimmer */}
+              <div
+                className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-blue-500/5 to-transparent"
+                style={{ animation: "shimmer 2s infinite" }}
+              />
+              <Loader2 className="relative h-3.5 w-3.5 animate-spin text-blue-500 shrink-0" />
+              <FileCode className="relative h-3.5 w-3.5 text-blue-400 shrink-0" />
+              <span className="relative text-xs font-medium text-blue-600 dark:text-blue-400">
+                Writing
+              </span>
+              <span className="relative truncate font-mono text-xs text-blue-500/80">
+                {currentStreamingFile}
               </span>
             </div>
           </div>
@@ -126,7 +160,7 @@ export function MessageList({
           />
         )}
 
-        {/* Suggestion chips: show after last assistant message when not streaming */}
+        {/* Suggestion chips */}
         {!isStreaming && suggestions.length > 0 && (
           <SuggestionChips
             suggestions={suggestions}

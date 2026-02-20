@@ -29,7 +29,7 @@ export function MessageReactions({ content, onReply }: MessageReactionsProps) {
   }, [content, onReply]);
 
   return (
-    <div className="flex items-center gap-0.5 rounded-lg border border-border/40 bg-card/80 shadow-sm p-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+    <div className="flex items-center gap-0.5 rounded-lg border border-border/40 bg-card/90 shadow-sm backdrop-blur-sm p-0.5">
       <button
         onClick={handleThumbsUp}
         className="rounded p-1 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"

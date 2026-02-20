@@ -9,6 +9,13 @@ import { MessageParser } from "@/lib/parser/message-parser";
 import type { Action } from "@/types/actions";
 import type { UpdateCard as UpdateCardType } from "@/types/update-card";
 import type { ToolActivity } from "@/lib/parser/types";
+import {
+  Globe,
+  ExternalLink,
+  CheckCircle2,
+  Loader2,
+  AlertCircle,
+} from "lucide-react";
 
 interface AssistantMessageProps {
   content: string;
@@ -16,9 +23,7 @@ interface AssistantMessageProps {
   onPlanApprove?: (planTitle: string) => void;
   onPlanReject?: (planTitle: string) => void;
   resolvedPlans?: Record<string, "approved" | "rejected">;
-  /** Live update card from store (only during streaming) */
   liveCard?: UpdateCardType;
-  /** Parsed suggestions from content */
   onSuggestionsFound?: (suggestions: string[]) => void;
 }
 
@@ -48,6 +53,17 @@ function getToolLabel(name: string): string {
     case "webSearch": return "Searching the web";
     case "fetchUrl": return "Reading webpage";
     default: return name;
+  }
+}
+
+function getToolIcon(name: string) {
+  switch (name) {
+    case "webSearch":
+      return <Globe className="h-3.5 w-3.5" />;
+    case "fetchUrl":
+      return <ExternalLink className="h-3.5 w-3.5" />;
+    default:
+      return <Globe className="h-3.5 w-3.5" />;
   }
 }
 
@@ -148,7 +164,6 @@ export function AssistantMessage({
 }: AssistantMessageProps) {
   const parsed = useMemo(() => parseContent(content), [content]);
 
-  // Notify parent of suggestions (separate effect to avoid side-effect in render)
   useEffect(() => {
     if (parsed.suggestions.length > 0 && onSuggestionsFound) {
       onSuggestionsFound(parsed.suggestions);
@@ -157,13 +172,13 @@ export function AssistantMessage({
 
   return (
     <div className="group relative px-4 py-3">
-      <div className="space-y-2">
+      <div className="space-y-3">
         {parsed.blocks.map((block, i) => {
           if (block.type === "text") {
             return (
               <div
                 key={`text-${i}`}
-                className="prose prose-sm dark:prose-invert max-w-none prose-p:leading-relaxed prose-p:my-1.5 prose-headings:my-2 prose-headings:font-semibold prose-ul:my-1.5 prose-ol:my-1.5 prose-li:my-0 prose-code:rounded prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:text-[12px] prose-code:before:content-none prose-code:after:content-none prose-pre:my-2 prose-pre:rounded-lg prose-pre:bg-muted"
+                className="prose prose-sm dark:prose-invert max-w-none prose-p:leading-[1.7] prose-p:my-1.5 prose-headings:my-2.5 prose-headings:font-semibold prose-headings:tracking-[-0.02em] prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-code:rounded-md prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:text-[12.5px] prose-code:font-medium prose-code:before:content-none prose-code:after:content-none prose-pre:my-2 prose-pre:rounded-xl prose-pre:bg-muted/80 text-[14px] leading-[1.7] tracking-[-0.01em]"
               >
                 <Markdown>{block.content.trim()}</Markdown>
               </div>
@@ -177,32 +192,26 @@ export function AssistantMessage({
             return (
               <div
                 key={`tool-${i}`}
-                className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-xs ${
+                className={`flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-xs transition-all ${
                   isError
-                    ? "border-red-500/30 bg-red-500/10 text-red-400"
+                    ? "border border-red-500/20 bg-red-500/5 text-red-500"
                     : isCalling
-                    ? "border-blue-500/30 bg-blue-500/10 text-blue-400"
-                    : "border-green-500/30 bg-green-500/10 text-green-400"
+                    ? "border border-primary/20 bg-primary/5 text-primary"
+                    : "border border-emerald-500/20 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400"
                 }`}
               >
                 {isCalling ? (
-                  <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
                 ) : isError ? (
-                  <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="10" />
-                    <line x1="15" y1="9" x2="9" y2="15" />
-                    <line x1="9" y1="9" x2="15" y2="15" />
-                  </svg>
+                  <AlertCircle className="h-3.5 w-3.5 shrink-0" />
                 ) : (
-                  <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
+                  <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
                 )}
+                {getToolIcon(activity.name)}
                 <span className="font-medium">{getToolLabel(activity.name)}</span>
-                {query && <span className="truncate opacity-70">&mdash; {query}</span>}
+                {query && (
+                  <span className="truncate opacity-60 font-normal">{query}</span>
+                )}
               </div>
             );
           }
@@ -226,7 +235,7 @@ export function AssistantMessage({
           <UpdateCard card={liveCard} />
         )}
 
-        {/* Historical artifact cards (rendered as UpdateCards) */}
+        {/* Historical artifact cards */}
         {!isStreaming && parsed.artifacts.map((artifact) => (
           <UpdateCard
             key={artifact.id}
@@ -238,14 +247,15 @@ export function AssistantMessage({
           />
         ))}
 
+        {/* Streaming cursor */}
         {isStreaming && parsed.plans.length === 0 && !liveCard && parsed.artifacts.length === 0 && parsed.blocks.length === 0 && (
           <span className="inline-block h-4 w-1 animate-pulse rounded-full bg-primary" />
         )}
       </div>
 
-      {/* Reaction buttons on hover */}
+      {/* Reaction buttons */}
       {!isStreaming && (
-        <div className="absolute -top-3 right-4">
+        <div className="absolute -top-3 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
           <MessageReactions content={content} />
         </div>
       )}
