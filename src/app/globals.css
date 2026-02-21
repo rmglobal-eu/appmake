@@ -160,3 +160,8 @@
   0%, 80%, 100% { transform: translateY(0); }
   40% { transform: translateY(-4px); }
 }
+
+@keyframes slideIn {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}

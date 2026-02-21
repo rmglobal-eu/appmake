@@ -1,14 +1,17 @@
 "use client";
 
 import { useSession, signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { NavHeader } from "@/components/NavHeader";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Plus, FolderOpen, MessageSquare } from "lucide-react";
+import { Menu } from "lucide-react";
 import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { MeshGradientBackground } from "@/components/dashboard/MeshGradientBackground";
+import { TypingHeading } from "@/components/dashboard/TypingHeading";
+import { DashboardChatInput } from "@/components/dashboard/DashboardChatInput";
+import { ProjectTabs } from "@/components/dashboard/ProjectTabs";
+import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 
 interface Project {
   id: string;
@@ -19,8 +22,8 @@ interface Project {
 
 export default function HomePage() {
   const { data: session, status } = useSession();
-  const router = useRouter();
   const [projects, setProjects] = useState<Project[]>([]);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (session?.user) {
@@ -39,9 +42,11 @@ export default function HomePage() {
     );
   }
 
+  // Unauthenticated — gradient background with login buttons
   if (!session) {
     return (
-      <div className="flex h-screen flex-col">
+      <div className="relative flex h-screen flex-col">
+        <MeshGradientBackground />
         <div className="flex justify-end p-4">
           <ThemeToggle />
         </div>
@@ -63,7 +68,7 @@ export default function HomePage() {
               priority
               className="block dark:hidden"
             />
-            <p className="text-muted-foreground">
+            <p className="text-white/70">
               Build apps with AI. Describe what you want, we build it.
             </p>
           </div>
@@ -76,6 +81,7 @@ export default function HomePage() {
                 })
               }
               size="lg"
+              className="bg-white text-black hover:bg-white/90"
             >
               Dev Login
             </Button>
@@ -83,6 +89,7 @@ export default function HomePage() {
               onClick={() => signIn("github")}
               size="lg"
               variant="outline"
+              className="border-white/20 text-white hover:bg-white/10"
             >
               GitHub
             </Button>
@@ -90,6 +97,7 @@ export default function HomePage() {
               onClick={() => signIn("google")}
               size="lg"
               variant="outline"
+              className="border-white/20 text-white hover:bg-white/10"
             >
               Google
             </Button>
@@ -99,55 +107,42 @@ export default function HomePage() {
     );
   }
 
+  const firstName = session.user?.name?.split(" ")[0] || "there";
+
   return (
-    <div className="flex h-screen flex-col">
-      <NavHeader />
-      <div className="mx-auto w-full max-w-4xl flex-1 px-4 py-12">
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">Your Projects</h1>
-            <p className="text-sm text-muted-foreground">
-              Welcome back, {session.user?.name}
-            </p>
-          </div>
-          <Button onClick={() => router.push("/new")}>
-            <Plus className="mr-2 h-4 w-4" />
-            New Project
-          </Button>
+    <div className="flex h-screen">
+      {/* Sidebar */}
+      <DashboardSidebar
+        user={session.user!}
+        projects={projects}
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
+
+      {/* Main content */}
+      <div className="relative flex min-w-0 flex-1 flex-col">
+        <MeshGradientBackground />
+
+        {/* Mobile header with hamburger */}
+        <div className="flex items-center justify-between p-4 md:hidden">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-white/70 hover:bg-white/10"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
         </div>
 
-        {projects.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
-            <FolderOpen className="mb-4 h-12 w-12 text-muted-foreground" />
-            <h2 className="text-lg font-medium">No projects yet</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Create your first project to get started.
-            </p>
-            <Button className="mt-4" onClick={() => router.push("/new")}>
-              <Plus className="mr-2 h-4 w-4" />
-              Create Project
-            </Button>
-          </div>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2">
-            {projects.map((project) => (
-              <button
-                key={project.id}
-                onClick={() => router.push(`/chat/${project.id}`)}
-                className="flex items-start gap-3 rounded-lg border p-4 text-left transition-colors hover:bg-accent"
-              >
-                <MessageSquare className="mt-0.5 h-5 w-5 text-muted-foreground" />
-                <div>
-                  <h3 className="font-medium">{project.name}</h3>
-                  <p className="text-xs text-muted-foreground">
-                    {project.template} &middot;{" "}
-                    {new Date(project.updatedAt).toLocaleDateString()}
-                  </p>
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
+        {/* Central hero area */}
+        <div className="flex flex-1 flex-col items-center justify-center gap-8 px-4">
+          <TypingHeading name={firstName} />
+          <DashboardChatInput />
+        </div>
+
+        {/* Project tabs */}
+        <div className="relative z-10 mx-auto w-full max-w-5xl px-4 pb-8">
+          <ProjectTabs projects={projects} />
+        </div>
       </div>
     </div>
   );
