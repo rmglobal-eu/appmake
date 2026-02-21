@@ -27,7 +27,7 @@ export function TypingHeading({ name }: TypingHeadingProps) {
   }, [fullText]);
 
   return (
-    <h1 className="text-4xl font-bold text-white md:text-5xl lg:text-6xl">
+    <h1 className="text-2xl font-bold text-white md:text-3xl lg:text-4xl">
       {displayed}
       <span
         className={`ml-0.5 inline-block h-[1em] w-[3px] translate-y-[0.1em] rounded-full bg-white ${

@@ -4,7 +4,6 @@ import { useMemo, useEffect } from "react";
 import Markdown from "react-markdown";
 import { UpdateCard } from "./UpdateCard";
 import { PlanCard } from "./PlanCard";
-import { MessageReactions } from "./MessageReactions";
 import { MessageParser } from "@/lib/parser/message-parser";
 import type { Action } from "@/types/actions";
 import type { UpdateCard as UpdateCardType } from "@/types/update-card";
@@ -253,12 +252,7 @@ export function AssistantMessage({
         )}
       </div>
 
-      {/* Reaction buttons */}
-      {!isStreaming && (
-        <div className="absolute -top-3 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-          <MessageReactions content={content} />
-        </div>
-      )}
+      {/* TODO: Wire up MessageReactions when messageId is available in props */}
     </div>
   );
 }

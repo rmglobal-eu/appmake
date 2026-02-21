@@ -5,6 +5,7 @@ import {
   uuid,
   integer,
   primaryKey,
+  unique,
 } from "drizzle-orm/pg-core";
 import type { AdapterAccountType } from "next-auth/adapters";
 
@@ -14,6 +15,7 @@ export const users = pgTable("users", {
   id: uuid("id").defaultRandom().primaryKey(),
   name: text("name"),
   email: text("email").unique().notNull(),
+  hashedPassword: text("hashed_password"),
   emailVerified: timestamp("email_verified", { mode: "date" }),
   image: text("image"),
   createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
@@ -74,6 +76,9 @@ export const projects = pgTable("projects", {
     .references(() => users.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   template: text("template").notNull().default("node"),
+  isPublic: integer("is_public").notNull().default(0),
+  description: text("description"),
+  category: text("category"),
   createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
 });
@@ -260,3 +265,169 @@ export const sandboxes = pgTable("sandboxes", {
     .defaultNow()
     .notNull(),
 });
+
+// ─── Usage Logs (Token/Cost Tracking) ────────────────────────────────
+
+export const usageLogs = pgTable("usage_logs", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  projectId: uuid("project_id"),
+  model: text("model").notNull(),
+  inputTokens: integer("input_tokens").notNull().default(0),
+  outputTokens: integer("output_tokens").notNull().default(0),
+  intent: text("intent").notNull().default("code-gen"),
+  cost: text("cost").notNull().default("0"),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+});
+
+// ─── Analytics Events ────────────────────────────────────────────────
+
+export const analyticsEvents = pgTable("analytics_events", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  projectId: uuid("project_id"),
+  eventType: text("event_type").notNull(),
+  metadata: text("metadata"), // JSON stringified
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+});
+
+// ─── Audit Logs ──────────────────────────────────────────────────────
+
+export const auditLogs = pgTable("audit_logs", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id"),
+  action: text("action").notNull(),
+  resource: text("resource").notNull(),
+  resourceId: text("resource_id"),
+  metadata: text("metadata"),
+  ip: text("ip"),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+});
+
+// ─── User Settings ───────────────────────────────────────────────────
+
+export const userSettings = pgTable("user_settings", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" })
+    .unique(),
+  aiModel: text("ai_model"),
+  temperature: text("temperature"),
+  maxTokens: integer("max_tokens"),
+  editorTheme: text("editor_theme").default("oneDark"),
+  editorFontSize: integer("editor_font_size").default(14),
+  tabSize: integer("tab_size").default(2),
+  notifications: text("notifications"), // JSON stringified
+  customApiKey: text("custom_api_key"), // encrypted
+  updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
+});
+
+// ─── Message Reactions ───────────────────────────────────────────────
+
+export const messageReactions = pgTable("message_reactions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  messageId: uuid("message_id")
+    .notNull()
+    .references(() => messages.id, { onDelete: "cascade" }),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  type: text("type").$type<"thumbs_up" | "thumbs_down">().notNull(),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+});
+
+// ─── Pinned Messages ─────────────────────────────────────────────────
+
+export const pinnedMessages = pgTable("pinned_messages", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  chatId: uuid("chat_id")
+    .notNull()
+    .references(() => chats.id, { onDelete: "cascade" }),
+  messageId: uuid("message_id")
+    .notNull()
+    .references(() => messages.id, { onDelete: "cascade" }),
+  pinnedBy: uuid("pinned_by")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+});
+
+// ─── Comments (Code Comments) ────────────────────────────────────────
+
+export const comments = pgTable("comments", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  projectId: uuid("project_id")
+    .notNull()
+    .references(() => projects.id, { onDelete: "cascade" }),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  filePath: text("file_path").notNull(),
+  lineNumber: integer("line_number"),
+  content: text("content").notNull(),
+  resolvedAt: timestamp("resolved_at", { mode: "date" }),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+});
+
+// ─── Project Views ───────────────────────────────────────────────────
+
+export const projectViews = pgTable("project_views", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  projectId: uuid("project_id")
+    .notNull()
+    .references(() => projects.id, { onDelete: "cascade" }),
+  viewerUserId: uuid("viewer_user_id"),
+  viewedAt: timestamp("viewed_at", { mode: "date" }).defaultNow().notNull(),
+});
+
+// ─── Onboarding Progress ─────────────────────────────────────────────
+
+export const onboardingProgress = pgTable("onboarding_progress", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" })
+    .unique(),
+  completedSteps: text("completed_steps"), // JSON array of step IDs
+  skippedAt: timestamp("skipped_at", { mode: "date" }),
+  completedAt: timestamp("completed_at", { mode: "date" }),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+});
+
+// ─── Invoices ────────────────────────────────────────────────────────
+
+export const invoices = pgTable("invoices", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  stripeInvoiceId: text("stripe_invoice_id"),
+  amount: integer("amount").notNull(), // in cents
+  currency: text("currency").notNull().default("usd"),
+  status: text("status").$type<"paid" | "open" | "void" | "uncollectible">().notNull().default("open"),
+  pdfUrl: text("pdf_url"),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+});
+
+// ─── Likes ───────────────────────────────────────────────────────────
+
+export const likes = pgTable(
+  "likes",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  },
+  (table) => [unique().on(table.userId, table.projectId)]
+);

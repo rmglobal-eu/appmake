@@ -1,62 +1,65 @@
 "use client";
 
 import { useCallback } from "react";
-import { ThumbsUp, ThumbsDown, Copy, Reply } from "lucide-react";
-import { toast } from "sonner";
+import { ThumbsUp, ThumbsDown } from "lucide-react";
 
 interface MessageReactionsProps {
-  content: string;
-  onReply?: (quotedText: string) => void;
+  messageId: string;
+  currentReaction?: "thumbs_up" | "thumbs_down" | null;
+  onReact: (
+    messageId: string,
+    type: "thumbs_up" | "thumbs_down"
+  ) => void;
 }
 
-export function MessageReactions({ content, onReply }: MessageReactionsProps) {
-  const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(content);
-    toast.success("Copied to clipboard", { duration: 1500 });
-  }, [content]);
-
+export function MessageReactions({
+  messageId,
+  currentReaction,
+  onReact,
+}: MessageReactionsProps) {
   const handleThumbsUp = useCallback(() => {
-    toast.success("Thanks for the feedback!", { duration: 1500 });
-  }, []);
+    onReact(messageId, "thumbs_up");
+  }, [messageId, onReact]);
 
   const handleThumbsDown = useCallback(() => {
-    toast("Feedback noted", { duration: 1500 });
-  }, []);
-
-  const handleReply = useCallback(() => {
-    const quote = content.slice(0, 100).replace(/\n/g, " ");
-    onReply?.(`> ${quote}${content.length > 100 ? "..." : ""}\n\n`);
-  }, [content, onReply]);
+    onReact(messageId, "thumbs_down");
+  }, [messageId, onReact]);
 
   return (
-    <div className="flex items-center gap-0.5 rounded-lg border border-white/10 bg-[#0f0f14]/90 shadow-lg backdrop-blur-xl p-0.5">
+    <div className="flex items-center gap-1">
       <button
         onClick={handleThumbsUp}
-        className="rounded p-1 text-white/40 hover:text-white hover:bg-white/10 transition-colors"
+        className={`p-1.5 rounded-md transition-all duration-150 ${
+          currentReaction === "thumbs_up"
+            ? "text-emerald-400 bg-emerald-500/15 hover:bg-emerald-500/20"
+            : "text-white/30 hover:text-white/60 hover:bg-white/5"
+        }`}
         title="Helpful"
+        aria-label="Mark as helpful"
+        aria-pressed={currentReaction === "thumbs_up"}
       >
-        <ThumbsUp className="h-3 w-3" />
+        <ThumbsUp
+          className={`w-3.5 h-3.5 ${
+            currentReaction === "thumbs_up" ? "fill-emerald-400" : ""
+          }`}
+        />
       </button>
       <button
         onClick={handleThumbsDown}
-        className="rounded p-1 text-white/40 hover:text-white hover:bg-white/10 transition-colors"
+        className={`p-1.5 rounded-md transition-all duration-150 ${
+          currentReaction === "thumbs_down"
+            ? "text-red-400 bg-red-500/15 hover:bg-red-500/20"
+            : "text-white/30 hover:text-white/60 hover:bg-white/5"
+        }`}
         title="Not helpful"
+        aria-label="Mark as not helpful"
+        aria-pressed={currentReaction === "thumbs_down"}
       >
-        <ThumbsDown className="h-3 w-3" />
-      </button>
-      <button
-        onClick={handleCopy}
-        className="rounded p-1 text-white/40 hover:text-white hover:bg-white/10 transition-colors"
-        title="Copy"
-      >
-        <Copy className="h-3 w-3" />
-      </button>
-      <button
-        onClick={handleReply}
-        className="rounded p-1 text-white/40 hover:text-white hover:bg-white/10 transition-colors"
-        title="Reply"
-      >
-        <Reply className="h-3 w-3" />
+        <ThumbsDown
+          className={`w-3.5 h-3.5 ${
+            currentReaction === "thumbs_down" ? "fill-red-400" : ""
+          }`}
+        />
       </button>
     </div>
   );

@@ -23,7 +23,7 @@ export function NavHeader() {
     <header className="flex h-12 shrink-0 items-center justify-between border-b bg-background px-4">
       <button
         className="flex items-center gap-2"
-        onClick={() => router.push("/")}
+        onClick={() => router.push("/dashboard")}
       >
         <Image
           src="/icon-dark.svg"
@@ -75,7 +75,7 @@ export function NavHeader() {
                 </p>
               </div>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => router.push("/")}>
+              <DropdownMenuItem onClick={() => router.push("/dashboard")}>
                 <FolderOpen className="mr-2 h-4 w-4" />
                 Projects
               </DropdownMenuItem>

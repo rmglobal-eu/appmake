@@ -5,6 +5,9 @@ import { db } from "@/lib/db";
 import { messages as messagesTable, chats, users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import type { ModelProvider } from "@/types/chat";
+import { classifyIntent } from "@/lib/llm/intent-classifier";
+import { logUsage } from "@/lib/llm/cost-tracker";
+import { trackEvent } from "@/lib/analytics/collector";
 
 const DAILY_LIMIT = 20;
 
@@ -13,6 +16,8 @@ export async function POST(req: Request) {
   if (!session?.user?.id) {
     return new Response("Unauthorized", { status: 401 });
   }
+
+  const userId = session.user.id;
 
   const body = await req.json();
   const {
@@ -33,7 +38,7 @@ export async function POST(req: Request) {
 
   // ── Usage limit check ──────────────────────────────────────────────
   const user = await db.query.users.findFirst({
-    where: eq(users.id, session.user.id),
+    where: eq(users.id, userId),
   });
 
   if (!user) {
@@ -52,7 +57,7 @@ export async function POST(req: Request) {
     await db
       .update(users)
       .set({ dailyMessageCount: 0, messageCountResetAt: now })
-      .where(eq(users.id, session.user.id));
+      .where(eq(users.id, userId));
   }
 
   if (dailyMessageCount >= DAILY_LIMIT) {
@@ -72,7 +77,7 @@ export async function POST(req: Request) {
   await db
     .update(users)
     .set({ dailyMessageCount: dailyMessageCount + 1 })
-    .where(eq(users.id, session.user.id));
+    .where(eq(users.id, userId));
 
   // Save user message
   const lastUserMessage = messages[messages.length - 1];
@@ -87,12 +92,31 @@ export async function POST(req: Request) {
     });
   }
 
+  // ── Intent classification ────────────────────────────────────────────
+  const lastContent = typeof lastUserMessage.content === "string"
+    ? lastUserMessage.content
+    : JSON.stringify(lastUserMessage.content);
+  const classified = classifyIntent(lastContent);
+
+  // Track analytics event (best-effort)
+  trackEvent({
+    userId: userId,
+    eventType: "chat_message",
+    metadata: {
+      intent: classified.intent,
+      complexity: classified.complexity,
+      model: modelId,
+      provider,
+    },
+  }).catch(() => {});
+
   const result = streamChat({
     messages,
     modelId,
     provider,
     projectContext,
     planMode,
+    intent: classified.intent,
     abortSignal: req.signal,
   });
 
@@ -142,6 +166,18 @@ export async function POST(req: Request) {
 
       // Save assistant message after streaming completes (strip tool tags for storage)
       const cleanText = fullText.replace(/<tool-activity[^/]*\/>\n?/g, "");
+
+      // Log token usage (estimate based on text length)
+      const estimatedInputTokens = Math.ceil(JSON.stringify(messages).length / 4);
+      const estimatedOutputTokens = Math.ceil(fullText.length / 4);
+      logUsage({
+        userId: userId,
+        model: modelId,
+        inputTokens: estimatedInputTokens,
+        outputTokens: estimatedOutputTokens,
+        intent: classified.intent,
+      }).catch(() => {});
+
       try {
         await db.insert(messagesTable).values({
           chatId,

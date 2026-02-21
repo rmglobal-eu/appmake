@@ -1,86 +1,227 @@
+import { NextRequest, NextResponse } from "next/server";
+import { headers } from "next/headers";
 import { db } from "@/lib/db";
-import { subscriptions } from "@/lib/db/schema";
+import { subscriptions, invoices } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { getStripe } from "@/lib/billing/stripe";
+import Stripe from "stripe";
 
-const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
+export async function POST(request: NextRequest) {
+  const body = await request.text();
+  const headersList = await headers();
+  const signature = headersList.get("stripe-signature");
 
-export async function POST(req: Request) {
-  const body = await req.text();
-  const sig = req.headers.get("stripe-signature");
-
-  if (!STRIPE_WEBHOOK_SECRET || !sig) {
-    return new Response("Webhook secret not configured", { status: 400 });
+  if (!signature) {
+    return NextResponse.json(
+      { error: "Missing stripe-signature header" },
+      { status: 400 }
+    );
   }
 
-  // Simple signature verification (in production, use stripe SDK)
-  // For now, parse the event directly
-  let event: { type: string; data: { object: Record<string, unknown> } };
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    console.error("[WEBHOOK] STRIPE_WEBHOOK_SECRET not configured");
+    return NextResponse.json(
+      { error: "Webhook secret not configured" },
+      { status: 500 }
+    );
+  }
+
+  let event: Stripe.Event;
+  const stripe = getStripe();
+
   try {
-    event = JSON.parse(body);
-  } catch {
-    return new Response("Invalid payload", { status: 400 });
+    event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("[WEBHOOK] Signature verification failed:", message);
+    return NextResponse.json(
+      { error: `Webhook signature verification failed: ${message}` },
+      { status: 400 }
+    );
   }
 
-  const obj = event.data.object as Record<string, unknown>;
+  try {
+    switch (event.type) {
+      case "checkout.session.completed": {
+        const session = event.data.object as Stripe.Checkout.Session;
+        const userId = session.metadata?.userId;
+        const planId = (session.metadata?.planId ?? "pro") as "free" | "pro" | "team";
 
-  switch (event.type) {
-    case "checkout.session.completed": {
-      const userId = (obj.metadata as Record<string, string>)?.userId;
-      const subscriptionId = obj.subscription as string;
-      if (userId && subscriptionId) {
-        // Fetch subscription details from Stripe
-        const subRes = await fetch(`https://api.stripe.com/v1/subscriptions/${subscriptionId}`, {
-          headers: { Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}` },
-        });
-        const subData = await subRes.json();
-        const priceId = subData.items?.data?.[0]?.price?.id;
-        const plan = priceId === process.env.STRIPE_PRICE_TEAM_MONTHLY ? "team" : "pro";
+        if (!userId || !planId) {
+          console.error("[WEBHOOK] Missing metadata on checkout session");
+          break;
+        }
 
-        await db.update(subscriptions)
-          .set({
+        const subscriptionId = session.subscription as string;
+        const customerId = session.customer as string;
+
+        const stripeSubscription =
+          await stripe.subscriptions.retrieve(subscriptionId) as unknown as {
+            current_period_end: number;
+          };
+
+        await db
+          .insert(subscriptions)
+          .values({
+            userId,
+            stripeCustomerId: customerId,
             stripeSubscriptionId: subscriptionId,
-            plan: plan as "pro" | "team",
+            plan: planId,
             status: "active",
-            currentPeriodEnd: new Date(subData.current_period_end * 1000),
+            currentPeriodEnd: new Date(
+              stripeSubscription.current_period_end * 1000
+            ),
           })
-          .where(eq(subscriptions.userId, userId));
+          .onConflictDoUpdate({
+            target: subscriptions.userId,
+            set: {
+              stripeCustomerId: customerId,
+              stripeSubscriptionId: subscriptionId,
+              plan: planId,
+              status: "active",
+              currentPeriodEnd: new Date(
+                stripeSubscription.current_period_end * 1000
+              ),
+            },
+          });
+
+        console.log(
+          `[WEBHOOK] Checkout completed for user ${userId}, plan: ${planId}`
+        );
+        break;
       }
-      break;
-    }
 
-    case "customer.subscription.updated": {
-      const subId = obj.id as string;
-      const status = obj.status as string;
-      const cancelAt = obj.cancel_at_period_end as boolean;
+      case "customer.subscription.updated": {
+        const subscription = event.data.object as unknown as {
+          id: string;
+          status: string;
+          current_period_end: number;
+          metadata?: Record<string, string>;
+        };
 
-      const sub = await db.query.subscriptions.findFirst({
-        where: eq(subscriptions.stripeSubscriptionId, subId),
-      });
+        // Find user by subscription ID
+        const sub = await db
+          .select()
+          .from(subscriptions)
+          .where(eq(subscriptions.stripeSubscriptionId, subscription.id))
+          .then((rows) => rows[0]);
 
-      if (sub) {
-        await db.update(subscriptions)
+        if (sub) {
+          const status = subscription.status === "active"
+            ? "active" as const
+            : subscription.status === "past_due"
+              ? "past_due" as const
+              : subscription.status === "canceled"
+                ? "canceled" as const
+                : "active" as const;
+
+          await db
+            .update(subscriptions)
+            .set({
+              status,
+              currentPeriodEnd: new Date(
+                subscription.current_period_end * 1000
+              ),
+            })
+            .where(eq(subscriptions.userId, sub.userId));
+        }
+
+        console.log(
+          `[WEBHOOK] Subscription updated: ${subscription.id}, status: ${subscription.status}`
+        );
+        break;
+      }
+
+      case "customer.subscription.deleted": {
+        const subscription = event.data.object as unknown as {
+          id: string;
+          metadata?: Record<string, string>;
+        };
+
+        await db
+          .update(subscriptions)
           .set({
-            status: cancelAt ? "canceled" : (status === "active" ? "active" : status === "past_due" ? "past_due" : "active") as "active" | "canceled" | "past_due",
-            currentPeriodEnd: new Date((obj.current_period_end as number) * 1000),
+            status: "canceled",
+            plan: "free",
           })
-          .where(eq(subscriptions.id, sub.id));
+          .where(eq(subscriptions.stripeSubscriptionId, subscription.id));
+
+        console.log(
+          `[WEBHOOK] Subscription canceled: ${subscription.id}`
+        );
+        break;
       }
-      break;
+
+      case "invoice.paid": {
+        const invoice = event.data.object as Stripe.Invoice;
+        const customerId = invoice.customer as string;
+
+        const sub = await db
+          .select()
+          .from(subscriptions)
+          .where(eq(subscriptions.stripeCustomerId, customerId))
+          .then((rows) => rows[0]);
+
+        if (sub) {
+          await db.insert(invoices).values({
+            userId: sub.userId,
+            stripeInvoiceId: invoice.id,
+            amount: invoice.amount_paid,
+            currency: invoice.currency,
+            status: "paid",
+            pdfUrl: invoice.invoice_pdf ?? null,
+          });
+
+          console.log(
+            `[WEBHOOK] Invoice paid for user ${sub.userId}: $${(invoice.amount_paid / 100).toFixed(2)}`
+          );
+        }
+        break;
+      }
+
+      case "invoice.payment_failed": {
+        const invoice = event.data.object as Stripe.Invoice;
+        const customerId = invoice.customer as string;
+
+        const sub = await db
+          .select()
+          .from(subscriptions)
+          .where(eq(subscriptions.stripeCustomerId, customerId))
+          .then((rows) => rows[0]);
+
+        if (sub) {
+          await db
+            .update(subscriptions)
+            .set({ status: "past_due" })
+            .where(eq(subscriptions.userId, sub.userId));
+
+          await db.insert(invoices).values({
+            userId: sub.userId,
+            stripeInvoiceId: invoice.id,
+            amount: 0,
+            currency: invoice.currency,
+            status: "open",
+            pdfUrl: invoice.invoice_pdf ?? null,
+          });
+
+          console.log(
+            `[WEBHOOK] Payment failed for user ${sub.userId}`
+          );
+        }
+        break;
+      }
+
+      default:
+        console.log(`[WEBHOOK] Unhandled event type: ${event.type}`);
     }
 
-    case "customer.subscription.deleted": {
-      const subId = obj.id as string;
-      const sub = await db.query.subscriptions.findFirst({
-        where: eq(subscriptions.stripeSubscriptionId, subId),
-      });
-      if (sub) {
-        await db.update(subscriptions)
-          .set({ plan: "free", status: "canceled", stripeSubscriptionId: null })
-          .where(eq(subscriptions.id, sub.id));
-      }
-      break;
-    }
+    return NextResponse.json({ received: true });
+  } catch (error) {
+    console.error("[WEBHOOK] Error processing event:", error);
+    return NextResponse.json(
+      { error: "Webhook handler failed" },
+      { status: 500 }
+    );
   }
-
-  return new Response("ok", { status: 200 });
 }

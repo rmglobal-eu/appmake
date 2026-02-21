@@ -18,6 +18,12 @@ export interface SelectedElement {
   inlineStyle: string;
 }
 
+export type GlobalErrorState = {
+  hasError: boolean;
+  message: string;
+  recoverable: boolean;
+} | null;
+
 interface BuilderStore {
   viewMode: ViewMode;
   deviceViewport: DeviceViewport;
@@ -32,6 +38,12 @@ interface BuilderStore {
   previewMode: PreviewMode;
   visualEditPending: boolean;
 
+  // Loading & error states
+  isProjectLoading: boolean;
+  isSaving: boolean;
+  globalError: GlobalErrorState;
+  validationErrors: string[];
+
   setViewMode: (mode: ViewMode) => void;
   setDeviceViewport: (viewport: DeviceViewport) => void;
   setPlanMode: (on: boolean) => void;
@@ -44,6 +56,13 @@ interface BuilderStore {
   toggleTerminal: () => void;
   setPreviewMode: (mode: PreviewMode) => void;
   setVisualEditPending: (pending: boolean) => void;
+
+  // Loading & error actions
+  setProjectLoading: (loading: boolean) => void;
+  setSaving: (saving: boolean) => void;
+  setGlobalError: (error: GlobalErrorState) => void;
+  clearGlobalError: () => void;
+  setValidationErrors: (errors: string[]) => void;
 }
 
 export const useBuilderStore = create<BuilderStore>((set) => ({
@@ -59,6 +78,12 @@ export const useBuilderStore = create<BuilderStore>((set) => ({
   terminalVisible: false,
   previewMode: "quick",
   visualEditPending: false,
+
+  // Loading & error states
+  isProjectLoading: false,
+  isSaving: false,
+  globalError: null,
+  validationErrors: [],
 
   setViewMode: (viewMode) => set({ viewMode }),
   setDeviceViewport: (deviceViewport) => set({ deviceViewport }),
@@ -77,4 +102,11 @@ export const useBuilderStore = create<BuilderStore>((set) => ({
   toggleTerminal: () => set((state) => ({ terminalVisible: !state.terminalVisible })),
   setPreviewMode: (previewMode) => set({ previewMode }),
   setVisualEditPending: (visualEditPending) => set({ visualEditPending }),
+
+  // Loading & error actions
+  setProjectLoading: (isProjectLoading) => set({ isProjectLoading }),
+  setSaving: (isSaving) => set({ isSaving }),
+  setGlobalError: (globalError) => set({ globalError }),
+  clearGlobalError: () => set({ globalError: null }),
+  setValidationErrors: (validationErrors) => set({ validationErrors }),
 }));

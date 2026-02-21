@@ -4,6 +4,23 @@ export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
   createdAt: Date;
+  parentMessageId?: string;
+  reactions?: {
+    thumbsUp: number;
+    thumbsDown: number;
+    userReaction?: "thumbs_up" | "thumbs_down" | null;
+  };
+  isPinned?: boolean;
+  attachments?: MessageAttachment[];
+}
+
+export interface MessageAttachment {
+  id: string;
+  type: "image" | "file";
+  name: string;
+  url: string;
+  mimeType?: string;
+  size?: number;
 }
 
 export interface Chat {

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowUp } from "lucide-react";
+import { ArrowUp, Plus, Mic, ListChecks } from "lucide-react";
 
 const PLACEHOLDERS = [
   "Build a todo app with drag-and-drop...",
@@ -76,38 +76,71 @@ export function DashboardChatInput() {
 
   return (
     <div className="w-full max-w-2xl">
-      <div className="relative rounded-2xl border border-white/15 bg-white/5 backdrop-blur-md transition-colors focus-within:border-white/30">
-        <textarea
-          ref={textareaRef}
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          onKeyDown={handleKeyDown}
-          rows={1}
-          disabled={loading}
-          className="w-full resize-none bg-transparent px-5 py-4 pr-14 text-white placeholder-transparent outline-none disabled:opacity-50"
-        />
-        {/* Animated placeholder */}
-        {!value && (
-          <span
-            className={`pointer-events-none absolute left-5 top-4 text-white/40 transition-opacity duration-300 ${
-              placeholderVisible ? "opacity-100" : "opacity-0"
-            }`}
-          >
-            {PLACEHOLDERS[placeholderIdx]}
-          </span>
-        )}
-        {/* Send button */}
-        <button
-          onClick={handleSubmit}
-          disabled={!value.trim() || loading}
-          className="absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-lg bg-white text-black transition-opacity hover:opacity-80 disabled:opacity-30"
-        >
-          {loading ? (
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-black border-t-transparent" />
-          ) : (
-            <ArrowUp className="h-4 w-4" />
+      <div className="rounded-[20px] border border-white/[0.08] bg-[#1e1e22] shadow-2xl transition-colors focus-within:border-white/15">
+        {/* Textarea area */}
+        <div className="relative">
+          <textarea
+            ref={textareaRef}
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            rows={1}
+            disabled={loading}
+            style={{ color: "#ffffff" }}
+            className="w-full resize-none bg-transparent px-5 pt-4 pb-2 text-[15px] font-semibold placeholder-transparent outline-none disabled:opacity-50"
+          />
+          {/* Animated placeholder */}
+          {!value && (
+            <span
+              className={`pointer-events-none absolute left-5 top-4 text-[15px] text-white/40 transition-opacity duration-300 ${
+                placeholderVisible ? "opacity-100" : "opacity-0"
+              }`}
+            >
+              {PLACEHOLDERS[placeholderIdx]}
+            </span>
           )}
-        </button>
+        </div>
+
+        {/* Bottom toolbar */}
+        <div className="flex items-center justify-between px-3 pb-3">
+          {/* Left side — attachment */}
+          <button
+            type="button"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-white/50 transition-colors hover:text-white/70"
+          >
+            <Plus className="h-[18px] w-[18px]" />
+          </button>
+
+          {/* Right side — Plan, Mic, Send */}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              className="flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-white/50 transition-colors hover:text-white/70"
+            >
+              <ListChecks className="h-4 w-4" />
+              <span className="text-[13px] font-medium">Plan</span>
+            </button>
+
+            <button
+              type="button"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-white/50 transition-colors hover:text-white/70"
+            >
+              <Mic className="h-[18px] w-[18px]" />
+            </button>
+
+            <button
+              onClick={handleSubmit}
+              disabled={!value.trim() || loading}
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-[#555] text-white transition-all hover:bg-[#666] disabled:bg-[#333] disabled:text-white/30"
+            >
+              {loading ? (
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              ) : (
+                <ArrowUp className="h-[18px] w-[18px]" />
+              )}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

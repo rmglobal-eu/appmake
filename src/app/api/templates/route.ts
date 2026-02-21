@@ -9,6 +9,8 @@ const BUILT_IN_TEMPLATES = [
     name: "SaaS Landing Page",
     description: "Modern landing page with hero, features, pricing, and CTA sections",
     category: "saas" as const,
+    type: "website" as const,
+    thumbnail: "https://mir-s3-cdn-cf.behance.net/projects/max_808/e710dd179056247.Y3JvcCw2MTM2LDQ4MDAsMTM2LDA.png",
     prompt: "Build a modern SaaS landing page with a hero section, features grid, pricing table with 3 tiers, testimonials, and a CTA section. Use a professional blue/indigo color scheme.",
     files: {
       "App.tsx": `export default function App() {
@@ -52,6 +54,8 @@ const BUILT_IN_TEMPLATES = [
     name: "Admin Dashboard",
     description: "Full dashboard with sidebar, charts, tables, and stats cards",
     category: "dashboard" as const,
+    type: "app" as const,
+    thumbnail: "https://mir-s3-cdn-cf.behance.net/projects/max_808/87a08b167464553.Y3JvcCwyNDI0LDE4OTYsMCww.png",
     prompt: "Build an admin dashboard with a sidebar navigation, top stats cards showing revenue/users/orders, a line chart, and a recent orders table.",
     files: {
       "App.tsx": `import { useState } from 'react';
@@ -111,6 +115,8 @@ export default function App() {
     name: "E-Commerce Store",
     description: "Product grid with cart, filters, and checkout flow",
     category: "ecommerce" as const,
+    type: "website" as const,
+    thumbnail: "https://mir-s3-cdn-cf.behance.net/projects/max_808/80e774240152341.Y3JvcCwyNjg0LDIxMDAsNTksMA.jpg",
     prompt: "Build a simple e-commerce store with a product grid showing 6 products with images, prices, and add-to-cart buttons. Include a shopping cart sidebar.",
     files: {
       "App.tsx": `import { useState } from 'react';
@@ -172,6 +178,8 @@ export default function App() {
     name: "Personal Portfolio",
     description: "Clean portfolio with hero, projects, about, and contact sections",
     category: "portfolio" as const,
+    type: "website" as const,
+    thumbnail: "https://mir-s3-cdn-cf.behance.net/projects/max_808/c9d2f2220955701.67cc14442a970.jpg",
     prompt: "Build a personal portfolio website with a hero section, projects grid, about section, and contact form.",
     files: {
       "App.tsx": `export default function App() {
@@ -218,6 +226,8 @@ export default function App() {
     name: "Blog",
     description: "Clean blog layout with post list, categories, and article view",
     category: "blog" as const,
+    type: "website" as const,
+    thumbnail: "https://mir-s3-cdn-cf.behance.net/projects/max_808/493c7a71486237.Y3JvcCwxNTM0LDEyMDAsMTEsMC.png",
     prompt: "Build a blog with a post list, category filters, and article reading view.",
     files: {
       "App.tsx": `import { useState } from 'react';
@@ -258,24 +268,98 @@ export default function App() {
 }`,
     },
   },
+  {
+    slug: "agency",
+    name: "Agency Website",
+    description: "Creative agency site with portfolio showcase and team section",
+    category: "landing" as const,
+    type: "website" as const,
+    thumbnail: "https://mir-s3-cdn-cf.behance.net/projects/max_808/d37a67182633761.Y3JvcCwzMDY4LDI0MDAsNjgsMA.png",
+    prompt: "Build a creative agency website with a bold hero, portfolio grid, team section, and contact form.",
+    files: {},
+  },
+  {
+    slug: "restaurant",
+    name: "Restaurant",
+    description: "Restaurant website with menu, reservations, and gallery",
+    category: "landing" as const,
+    type: "website" as const,
+    thumbnail: "https://mir-s3-cdn-cf.behance.net/projects/max_808/4ad23f169134857.Y3JvcCwyMzAxLDE4MDAsNTEsMA.png",
+    prompt: "Build a restaurant website with a hero image, food menu with categories, reservation form, and photo gallery.",
+    files: {},
+  },
+  {
+    slug: "fitness",
+    name: "Fitness App",
+    description: "Fitness tracking app with workout plans and progress dashboard",
+    category: "dashboard" as const,
+    type: "app" as const,
+    thumbnail: "https://mir-s3-cdn-cf.behance.net/projects/max_808/345528227343721.Y3JvcCwyNzk4LDIxODksMCww.jpg",
+    prompt: "Build a fitness app dashboard with workout plans, progress charts, and activity tracking.",
+    files: {},
+  },
+  {
+    slug: "travel-blog",
+    name: "Travel Blog",
+    description: "Travel blog with photo stories, destination guides, and maps",
+    category: "blog" as const,
+    type: "website" as const,
+    thumbnail: "https://mir-s3-cdn-cf.behance.net/projects/max_808/f8475d199001215.Y3JvcCwzMDY4LDI0MDAsODMsMA.png",
+    prompt: "Build a travel blog with featured destinations, photo stories, and a world map.",
+    files: {},
+  },
+  {
+    slug: "music-platform",
+    name: "Music Platform",
+    description: "Music streaming interface with playlists and player controls",
+    category: "other" as const,
+    type: "app" as const,
+    thumbnail: "https://mir-s3-cdn-cf.behance.net/projects/max_808/808031207595367.Y3JvcCwzMDY4LDI0MDAsNjgsMA.jpg",
+    prompt: "Build a music streaming platform with playlists, album art, and a bottom player bar.",
+    files: {},
+  },
+  {
+    slug: "real-estate",
+    name: "Real Estate",
+    description: "Property listings with search, filters, and detail views",
+    category: "ecommerce" as const,
+    type: "website" as const,
+    thumbnail: "https://mir-s3-cdn-cf.behance.net/projects/max_808/127f27223628637.Y3JvcCwzNjAwLDI4MTUsMCww.jpg",
+    prompt: "Build a real estate platform with property listings, search filters, and property detail pages.",
+    files: {},
+  },
+  {
+    slug: "ai-startup",
+    name: "AI Startup",
+    description: "Modern AI startup landing page with demos and pricing",
+    category: "saas" as const,
+    type: "website" as const,
+    thumbnail: "https://mir-s3-cdn-cf.behance.net/projects/max_808/b08ad3230975049.Y3JvcCw0NTE0LDM1MzEsMTQ1LDA.png",
+    prompt: "Build an AI startup landing page with a futuristic hero, product demo section, features, and pricing.",
+    files: {},
+  },
 ];
 
 export async function GET() {
-  // Return built-in templates + any user-created templates from DB
-  const dbTemplates = await db.select().from(templates).orderBy(templates.createdAt);
+  const builtIn = BUILT_IN_TEMPLATES.map((t) => ({
+    ...t,
+    id: t.slug,
+    isBuiltIn: true,
+  }));
 
-  const allTemplates = [
-    ...BUILT_IN_TEMPLATES.map((t) => ({
-      ...t,
-      id: t.slug,
-      isBuiltIn: true,
-    })),
-    ...dbTemplates.map((t) => ({
+  // Try to also load user-created templates from DB
+  let dbEntries: Record<string, unknown>[] = [];
+  try {
+    const dbTemplates = await db.select().from(templates).orderBy(templates.createdAt);
+    dbEntries = dbTemplates.map((t) => ({
       ...t,
       files: JSON.parse(t.files),
+      type: "website",
       isBuiltIn: false,
-    })),
-  ];
+    }));
+  } catch {
+    // DB might not have templates table yet — just return built-in
+  }
 
-  return Response.json({ templates: allTemplates });
+  return Response.json({ templates: [...builtIn, ...dbEntries] });
 }

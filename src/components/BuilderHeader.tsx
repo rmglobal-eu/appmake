@@ -95,7 +95,7 @@ export function BuilderHeader({ onRefresh, onShare, onPublish, onGit, onSupabase
         <div className="flex items-center gap-1.5 mr-2">
           <button
             className="flex items-center gap-1.5 rounded-md px-1.5 py-1 hover:bg-white/10"
-            onClick={() => router.push("/")}
+            onClick={() => router.push("/dashboard")}
           >
             <Image
               src="/icon-dark.svg"
@@ -121,7 +121,7 @@ export function BuilderHeader({ onRefresh, onShare, onPublish, onGit, onSupabase
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
-              <DropdownMenuItem onClick={() => router.push("/")}>
+              <DropdownMenuItem onClick={() => router.push("/dashboard")}>
                 <FolderOpen className="mr-2 h-4 w-4" />
                 All Projects
               </DropdownMenuItem>
@@ -359,7 +359,7 @@ export function BuilderHeader({ onRefresh, onShare, onPublish, onGit, onSupabase
                   <p className="text-xs text-muted-foreground">{session.user.email}</p>
                 </div>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => router.push("/")}>
+                <DropdownMenuItem onClick={() => router.push("/dashboard")}>
                   <FolderOpen className="mr-2 h-4 w-4" />
                   Projects
                 </DropdownMenuItem>
