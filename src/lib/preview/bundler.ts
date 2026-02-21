@@ -175,9 +175,45 @@ function isBareSpecifier(path: string): boolean {
 // Build a normalized file map (strip src/ prefix from all keys)
 // ---------------------------------------------------------------------------
 
+/** Extensions that esbuild can actually bundle */
+const BUNDLEABLE_EXT = [".tsx", ".ts", ".jsx", ".js", ".css", ".json"];
+
+/** Config/build files that should NOT be bundled even if they have a valid extension */
+const SKIP_FILES = [
+  "vite.config", "tsconfig", "postcss.config", "tailwind.config",
+  "next.config", "jest.config", "babel.config", "eslint",
+  "package.json", "package-lock.json",
+];
+
+function isBundleable(key: string, content: string): boolean {
+  // Skip shell commands (e.g. "npm install", CDATA entries)
+  if (!key.includes(".")) return false;
+  if (key.includes("CDATA")) return false;
+
+  // Skip HTML files (index.html, etc.)
+  if (key.endsWith(".html")) return false;
+
+  // Skip config/build files
+  const lower = key.toLowerCase();
+  for (const skip of SKIP_FILES) {
+    if (lower.includes(skip)) return false;
+  }
+
+  // Only include files with bundleable extensions
+  const hasBundleableExt = BUNDLEABLE_EXT.some((ext) => key.endsWith(ext));
+  if (!hasBundleableExt) return false;
+
+  // Skip files whose content looks like non-code (HTML documents, etc.)
+  const trimmed = content.trimStart();
+  if (trimmed.startsWith("<!") || trimmed.startsWith("<html")) return false;
+
+  return true;
+}
+
 function normalizeFileMap(files: Record<string, string>): Record<string, string> {
   const result: Record<string, string> = {};
   for (const [key, value] of Object.entries(files)) {
+    if (!isBundleable(key, value)) continue;
     result[stripPrefix(key)] = value;
   }
   return result;
