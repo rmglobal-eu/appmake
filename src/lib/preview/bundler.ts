@@ -126,12 +126,24 @@ interface EntryInfo {
   isSelfMounting: boolean;
 }
 
+/** Quick check: does the content look like valid JS/TS? (first non-whitespace char) */
+function looksLikeValidCode(content: string): boolean {
+  const trimmed = content.trimStart();
+  if (trimmed.length === 0) return false;
+  const ch = trimmed[0];
+  // Valid JS/TS files start with: import/export/const/let/var/function/class/type/interface,
+  // comments (// or /*), strings ("/' /`), or JSX (<)
+  return /[a-zA-Z"'`/<]/.test(ch);
+}
+
 function detectEntryPoint(files: Record<string, string>): EntryInfo | null {
   // 1. Check for bootstrap files (main.tsx, index.tsx) — they mount the app themselves
   for (const candidate of BOOTSTRAP_FILES) {
     if (candidate in files) {
       const content = files[candidate];
-      if (content.includes("createRoot") || content.includes("render") || content.includes("ReactDOM")) {
+      // Must look like valid code AND contain mounting logic
+      if (looksLikeValidCode(content) &&
+          (content.includes("createRoot") || content.includes("render") || content.includes("ReactDOM"))) {
         return { file: candidate, isSelfMounting: true };
       }
     }
@@ -139,16 +151,16 @@ function detectEntryPoint(files: Record<string, string>): EntryInfo | null {
 
   // 2. Check for component files (App.tsx) — need synthetic wrapper
   for (const candidate of COMPONENT_FILES) {
-    if (candidate in files) {
+    if (candidate in files && looksLikeValidCode(files[candidate])) {
       return { file: candidate, isSelfMounting: false };
     }
   }
 
-  // 3. Fallback: first .tsx/.jsx file
+  // 3. Fallback: first .tsx/.jsx file with valid-looking content
   const keys = Object.keys(files);
   const fallback =
-    keys.find((k) => k.endsWith(".tsx") && !k.includes("config") && k !== "__entry__.tsx") ??
-    keys.find((k) => k.endsWith(".jsx") && !k.includes("config")) ??
+    keys.find((k) => k.endsWith(".tsx") && !k.includes("config") && k !== "__entry__.tsx" && looksLikeValidCode(files[k])) ??
+    keys.find((k) => k.endsWith(".jsx") && !k.includes("config") && looksLikeValidCode(files[k])) ??
     null;
 
   if (fallback) {
