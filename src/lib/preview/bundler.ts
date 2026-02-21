@@ -269,7 +269,14 @@ export async function bundle(
   await ensureInitialized();
 
   let entryPoint: string;
-  const allFiles: Record<string, string> = { ...normalizedFiles };
+  // Remove files with invalid content from the map before esbuild sees them.
+  // This prevents parse errors when something imports a garbage file (e.g. main.tsx starting with "!").
+  const allFiles: Record<string, string> = {};
+  for (const [key, content] of Object.entries(normalizedFiles)) {
+    if (key.endsWith(".css") || key.endsWith(".json") || looksLikeValidCode(content)) {
+      allFiles[key] = content;
+    }
+  }
 
   if (entryInfo.isSelfMounting) {
     // main.tsx/index.tsx already has createRoot — use it directly
