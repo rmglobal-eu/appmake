@@ -20,6 +20,7 @@ export const users = pgTable("users", {
   image: text("image"),
   createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
   dailyMessageCount: integer("daily_message_count").notNull().default(0),
+  messageLimit: integer("message_limit").notNull().default(20),
   messageCountResetAt: timestamp("message_count_reset_at", { mode: "date" })
     .defaultNow()
     .notNull(),

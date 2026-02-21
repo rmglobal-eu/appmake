@@ -9,7 +9,7 @@ import { classifyIntent } from "@/lib/llm/intent-classifier";
 import { logUsage } from "@/lib/llm/cost-tracker";
 import { trackEvent } from "@/lib/analytics/collector";
 
-const DAILY_LIMIT = 20;
+const DEFAULT_DAILY_LIMIT = 20;
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -46,6 +46,7 @@ export async function POST(req: Request) {
   }
 
   let { dailyMessageCount, messageCountResetAt } = user;
+  const DAILY_LIMIT = (user as Record<string, unknown>).messageLimit as number ?? DEFAULT_DAILY_LIMIT;
   const now = new Date();
   const msSinceReset = now.getTime() - messageCountResetAt.getTime();
   const twentyFourHours = 24 * 60 * 60 * 1000;

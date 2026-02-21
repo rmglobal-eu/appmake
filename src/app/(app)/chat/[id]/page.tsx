@@ -104,6 +104,10 @@ export default function ChatPage() {
     if (!session?.user) return;
 
     async function init() {
+      // Clear previous project state before loading new data
+      useEditorStore.getState().clearGeneratedFiles();
+      clearMessages();
+
       try {
         const chatRes = await fetch(`/api/chats?projectId=${projectId}`);
         const chatData = await chatRes.json();

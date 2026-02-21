@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 
-const DAILY_LIMIT = 20;
+const DEFAULT_DAILY_LIMIT = 20;
 
 export async function GET() {
   const session = await auth();
@@ -16,8 +16,10 @@ export async function GET() {
   });
 
   if (!user) {
-    return Response.json({ used: 0, limit: DAILY_LIMIT, resetsAt: null });
+    return Response.json({ used: 0, limit: DEFAULT_DAILY_LIMIT, resetsAt: null });
   }
+
+  const DAILY_LIMIT = (user as Record<string, unknown>).messageLimit as number ?? DEFAULT_DAILY_LIMIT;
 
   let { dailyMessageCount, messageCountResetAt } = user;
   const now = new Date();
