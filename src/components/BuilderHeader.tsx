@@ -52,7 +52,6 @@ import {
   type DeviceViewport,
   type PreviewMode,
 } from "@/lib/stores/builder-store";
-import { usePreviewErrorStore } from "@/lib/stores/preview-error-store";
 
 interface BuilderHeaderProps {
   onRefresh?: () => void;
@@ -84,7 +83,7 @@ export function BuilderHeader({ onRefresh, onShare, onPublish, onGit, onSupabase
     setPreviewMode,
   } = useBuilderStore();
 
-  const errorCount = usePreviewErrorStore((s) => s.errors.length);
+  const errorCount = 0;
 
   const comingSoon = () => toast("Coming soon!", { duration: 1500 });
 

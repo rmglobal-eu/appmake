@@ -2,10 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { LivePreview } from "@/components/preview/LivePreview";
 import { useEditorStore } from "@/lib/stores/editor-store";
-import { MessageParser } from "@/lib/parser/message-parser";
-import type { ChatMessage } from "@/types/chat";
+import { LivePreview } from "@/components/preview/LivePreview";
 
 export default function SharePage() {
   const params = useParams();
@@ -72,8 +70,10 @@ export default function SharePage() {
           Shared view
         </span>
       </header>
-      <div className="flex-1">
-        <LivePreview />
+      <div className="relative flex-1">
+        <div className="absolute inset-0">
+          <LivePreview />
+        </div>
       </div>
     </div>
   );

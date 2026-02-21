@@ -1,105 +1,138 @@
 "use client";
 
-import { useMemo, useCallback, useRef } from "react";
-import {
-  SandpackProvider,
-  SandpackLayout,
-  SandpackPreview,
-} from "@codesandbox/sandpack-react";
-import { useEditorStore } from "@/lib/stores/editor-store";
-import {
-  toSandpackFiles,
-  extractDependencies,
-  depsHash,
-} from "@/lib/preview/sandpack-utils";
-import { SandpackFileSyncer } from "./SandpackFileSyncer";
-import { SandpackEventBridge } from "./SandpackEventBridge";
-import { PreviewErrorBanner } from "./PreviewErrorBanner";
+import { useEffect, useRef, useCallback } from "react";
+import { usePreviewBundler } from "@/hooks/usePreviewBundler";
+import { usePreviewStore } from "@/lib/stores/preview-store";
+import { PreviewErrorOverlay } from "./PreviewErrorOverlay";
+import { Loader2 } from "lucide-react";
 
 interface LivePreviewProps {
-  refreshKey?: number;
-  visualEditorMode?: boolean;
+  className?: string;
 }
 
-export function LivePreview({
-  refreshKey = 0,
-  visualEditorMode = false,
-}: LivePreviewProps) {
-  const { generatedFiles } = useEditorStore();
-  const fileCount = Object.keys(generatedFiles).length;
+export function LivePreview({ className = "" }: LivePreviewProps) {
+  const { html, status, errors, rebuild } = usePreviewBundler();
+  const { addConsoleEntry, setErrors: setStoreErrors } = usePreviewStore();
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const blobUrlRef = useRef<string | null>(null);
 
-  const deps = useMemo(
-    () => extractDependencies(generatedFiles),
-    [generatedFiles]
+  // Update iframe when html changes
+  useEffect(() => {
+    if (!html || status !== "ready") return;
+
+    // Revoke previous blob URL
+    if (blobUrlRef.current) {
+      URL.revokeObjectURL(blobUrlRef.current);
+    }
+
+    const blob = new Blob([html], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    blobUrlRef.current = url;
+
+    if (iframeRef.current) {
+      iframeRef.current.src = url;
+    }
+
+    return () => {
+      // Don't revoke here — we revoke on next update instead,
+      // so the iframe keeps showing the old content during rebuilds
+    };
+  }, [html, status]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (blobUrlRef.current) {
+        URL.revokeObjectURL(blobUrlRef.current);
+        blobUrlRef.current = null;
+      }
+    };
+  }, []);
+
+  // Listen for postMessage from iframe
+  const handleMessage = useCallback(
+    (event: MessageEvent) => {
+      const data = event.data;
+      if (!data || typeof data !== "object" || !data.type) return;
+
+      switch (data.type) {
+        case "preview-error":
+          if (data.error) {
+            setStoreErrors([
+              {
+                text: data.error.message || "Unknown error",
+                location: data.error.line
+                  ? {
+                      file: data.error.source || "unknown",
+                      line: data.error.line,
+                      column: data.error.column || 0,
+                    }
+                  : undefined,
+              },
+            ]);
+          }
+          break;
+
+        case "preview-console":
+          addConsoleEntry({
+            level: data.level || "log",
+            args: data.args || [],
+            timestamp: data.timestamp || Date.now(),
+          });
+          break;
+
+        case "preview-ready":
+          // Preview loaded successfully
+          break;
+      }
+    },
+    [addConsoleEntry, setStoreErrors]
   );
-  const depKey = useMemo(() => depsHash(deps), [deps]);
 
-  const sandpackFiles = useMemo(
-    () => toSandpackFiles(generatedFiles, visualEditorMode),
-    [generatedFiles, visualEditorMode]
-  );
+  useEffect(() => {
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [handleMessage]);
 
-  if (fileCount === 0) {
+  const fileCount = Object.keys(
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    usePreviewStore.getState().consoleLogs
+  ).length;
+
+  // No files yet
+  if (status === "idle" && !html) {
     return (
-      <div className="flex h-full items-center justify-center bg-muted/30">
+      <div
+        className={`flex h-full items-center justify-center bg-muted/30 ${className}`}
+      >
         <p className="text-sm text-muted-foreground">No preview available</p>
       </div>
     );
   }
 
   return (
-    <div className="relative h-full w-full overflow-hidden">
-      <SandpackProvider
-        key={`sp-${refreshKey}-${depKey}`}
-        files={sandpackFiles}
-        customSetup={{
-          dependencies: deps,
-          environment: "create-react-app",
-        }}
-        options={{
-          externalResources: [
-            "https://cdn.tailwindcss.com",
-          ],
-          autorun: true,
-          autoReload: true,
-        }}
-        style={{ height: "100%", width: "100%" }}
-      >
-        <SandpackFileSyncer
-          generatedFiles={generatedFiles}
-          visualEditorMode={visualEditorMode}
-        />
-        <SandpackEventBridge visualEditorMode={visualEditorMode} />
-        <SandpackLayout style={{ height: "100%", width: "100%", border: "none", borderRadius: 0 }}>
-          <SandpackPreview
-            showOpenInCodeSandbox={false}
-            showRefreshButton={false}
-            style={{ height: "100%", width: "100%" }}
-          />
-        </SandpackLayout>
-      </SandpackProvider>
-      <PreviewErrorBanner />
+    <div className={`relative h-full w-full ${className}`}>
+      {/* The iframe — always present to avoid flicker */}
+      <iframe
+        ref={iframeRef}
+        title="Preview"
+        className="h-full w-full border-0 bg-white"
+      />
+
+      {/* Loading indicator (shown during bundling, overlaid on previous preview) */}
+      {status === "bundling" && (
+        <div className="absolute inset-x-0 top-0 flex items-center justify-center">
+          <div className="mt-2 flex items-center gap-2 rounded-full bg-black/70 px-3 py-1.5 text-xs text-white shadow-lg backdrop-blur-sm">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            Bundling...
+          </div>
+        </div>
+      )}
+
+      {/* Error overlay */}
+      {status === "error" && errors.length > 0 && (
+        <PreviewErrorOverlay errors={errors} onRetry={rebuild} />
+      )}
     </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Bridge hook for visual editor sidebar
-// ---------------------------------------------------------------------------
-
-export function useLivePreviewBridge() {
-  return useCallback(
-    (payload: { text?: string; styles?: Record<string, string> }) => {
-      // Sandpack renders inside a nested iframe — find it
-      const sandpackWrapper = document.querySelector(".sp-preview-iframe") as HTMLIFrameElement | null;
-      const iframe = sandpackWrapper || document.querySelector<HTMLIFrameElement>(
-        'iframe[title="Sandpack Preview"]'
-      );
-      iframe?.contentWindow?.postMessage(
-        { type: "visual-editor-apply", payload },
-        "*"
-      );
-    },
-    []
   );
 }

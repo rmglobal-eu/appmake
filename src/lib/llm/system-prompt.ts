@@ -228,7 +228,7 @@ SECTION 11: ERROR HANDLING PATTERNS
 105. Implement graceful degradation — if a feature fails, the rest of the app should work.
 106. Never silently swallow errors with empty catch blocks.
 
-PACKAGE SUPPORT: Any npm package can be imported normally. The preview system uses Sandpack which resolves dependencies automatically. Just write standard import statements. Avoid Node.js-only packages (fs, path, crypto, etc.) — the code runs in a browser sandbox.
+PACKAGE SUPPORT: Any npm package can be imported normally. The preview system uses esbuild-wasm for bundling and esm.sh CDN for npm package resolution. Just write standard import statements. Avoid Node.js-only packages (fs, path, crypto, etc.) — the code runs in the browser.
 
 MULTI-PAGE ROUTING: You can use react-router-dom for multi-page apps. Use HashRouter (not BrowserRouter) since preview runs in an iframe. Example:
 \`\`\`
@@ -289,21 +289,21 @@ After outputting the plan, STOP and wait for the user to approve it. Do NOT writ
   }`;
 }
 
-const BUILD_PIPELINE_CONTEXT = `The preview system uses Sandpack (CodeSandbox's bundler) which provides:
+const BUILD_PIPELINE_CONTEXT = `The preview system uses esbuild-wasm (client-side bundler) + browser import maps + esm.sh CDN:
 1. Each file is a proper ES module with its own scope
 2. Standard import/export syntax works normally
-3. npm packages are resolved and bundled automatically
-4. TypeScript and JSX are compiled by the bundler
-5. HMR (Hot Module Replacement) for fast updates
-6. React and React DOM are included in the template
+3. npm packages are resolved via esm.sh CDN using browser import maps
+4. TypeScript and JSX are compiled by esbuild-wasm in the browser
+5. React 19 and React DOM are pre-configured in the import map
+6. Tailwind CSS is loaded via CDN for styling
 
 Because each file is a separate module:
 - Use proper import/export between files
 - const/let work normally (no redeclaration issues)
 - Variable names only need to be unique within each file
-- Any npm package can be imported (no CDN or UMD limitations)
+- Any npm package can be imported (resolved via esm.sh)
 
-The only limitation: Node.js-only packages (fs, path, child_process, crypto, etc.) will NOT work — code runs in a browser sandbox.`;
+The only limitation: Node.js-only packages (fs, path, child_process, crypto, etc.) will NOT work — code runs in the browser.`;
 
 export function getGhostFixSystemPrompt(buildContext?: string): string {
   return `You are an automated code-fix system. You receive code files and an error, and you output ONLY fixed files.

@@ -7,7 +7,6 @@ import {
   useBuilderStore,
   type SelectedElement,
 } from "@/lib/stores/builder-store";
-import { useVisualEditorSync } from "@/hooks/useVisualEditorSync";
 import {
   Type,
   Palette,
@@ -20,7 +19,8 @@ import {
 
 export function VisualEditorSidebar() {
   const { selectedElement } = useBuilderStore();
-  const syncAndApply = useVisualEditorSync();
+  // TODO: Re-wire when new preview system is built
+  const syncAndApply = (_payload: { text?: string; styles?: Record<string, string> }) => {};
 
   if (!selectedElement) {
     return (

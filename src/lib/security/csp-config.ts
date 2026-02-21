@@ -24,6 +24,7 @@ function buildDirectives(): Record<string, string[]> {
       "https://unpkg.com",
       "https://cdnjs.cloudflare.com",
       "https://cdn.jsdelivr.net",
+      "https://esm.sh", // esm.sh CDN for npm packages in preview
       "https://va.vercel-scripts.com", // Vercel Analytics
       "blob:",
     ],
@@ -61,6 +62,8 @@ function buildDirectives(): Record<string, string[]> {
       "https://api.anthropic.com",
       "https://vitals.vercel-insights.com", // Vercel Speed Insights
       "https://va.vercel-scripts.com",
+      "https://esm.sh", // esm.sh CDN for npm packages in preview
+      "https://cdn.tailwindcss.com",
     ],
 
     "frame-src": [

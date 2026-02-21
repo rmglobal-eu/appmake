@@ -1,11 +1,19 @@
 import { create } from "zustand";
 import type { UpdateCard, UpdateCardSubtask } from "@/types/update-card";
 
+type SessionPhase = "idle" | "thinking" | "researching" | "building" | "complete";
+
 interface UpdateCardStore {
   cards: UpdateCard[];
   activeCardId: string | null;
   currentStreamingFile: string | null;
   thinkingStartedAt: number | null;
+
+  // Session progress tracking
+  sessionPhase: SessionPhase;
+  toolCallCount: number;
+  sessionStartedAt: number | null;
+  filesTotal: number;
 
   openCard: (artifactId: string, title: string, previousFiles: Record<string, string>) => void;
   closeCard: (artifactId: string) => void;
@@ -15,6 +23,10 @@ interface UpdateCardStore {
   startThinking: () => void;
   stopThinking: () => void;
   incrementFileStat: (artifactId: string, type: "created" | "modified") => void;
+  setSessionPhase: (phase: SessionPhase) => void;
+  incrementToolCalls: () => void;
+  startSession: () => void;
+  endSession: () => void;
   reset: () => void;
 }
 
@@ -23,6 +35,10 @@ export const useUpdateCardStore = create<UpdateCardStore>((set) => ({
   activeCardId: null,
   currentStreamingFile: null,
   thinkingStartedAt: null,
+  sessionPhase: "idle" as SessionPhase,
+  toolCallCount: 0,
+  sessionStartedAt: null,
+  filesTotal: 0,
 
   openCard: (artifactId, title, previousFiles) =>
     set((state) => {
@@ -82,8 +98,8 @@ export const useUpdateCardStore = create<UpdateCardStore>((set) => ({
   stopThinking: () => set({ thinkingStartedAt: null }),
 
   incrementFileStat: (artifactId, type) =>
-    set((state) => ({
-      cards: state.cards.map((c) =>
+    set((state) => {
+      const newCards = state.cards.map((c) =>
         c.artifactId === artifactId
           ? {
               ...c,
@@ -91,8 +107,25 @@ export const useUpdateCardStore = create<UpdateCardStore>((set) => ({
               filesModified: type === "modified" ? c.filesModified + 1 : c.filesModified,
             }
           : c
-      ),
-    })),
+      );
+      const total = newCards.reduce((sum, c) => sum + c.filesCreated + c.filesModified, 0);
+      return { cards: newCards, filesTotal: total };
+    }),
+
+  setSessionPhase: (phase) => set({ sessionPhase: phase }),
+
+  incrementToolCalls: () =>
+    set((state) => ({ toolCallCount: state.toolCallCount + 1 })),
+
+  startSession: () =>
+    set({
+      sessionPhase: "thinking" as SessionPhase,
+      toolCallCount: 0,
+      sessionStartedAt: Date.now(),
+      filesTotal: 0,
+    }),
+
+  endSession: () => set({ sessionPhase: "complete" as SessionPhase }),
 
   reset: () =>
     set({
@@ -100,5 +133,9 @@ export const useUpdateCardStore = create<UpdateCardStore>((set) => ({
       activeCardId: null,
       currentStreamingFile: null,
       thinkingStartedAt: null,
+      sessionPhase: "idle" as SessionPhase,
+      toolCallCount: 0,
+      sessionStartedAt: null,
+      filesTotal: 0,
     }),
 }));

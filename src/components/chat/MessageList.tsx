@@ -4,6 +4,8 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { UserMessage } from "./UserMessage";
 import { AssistantMessage } from "./AssistantMessage";
 import { ThinkingIndicator } from "./ThinkingIndicator";
+import { SessionProgress } from "./SessionProgress";
+import { SessionComplete } from "./SessionComplete";
 import { SuggestionChips } from "./SuggestionChips";
 import { useUpdateCardStore } from "@/lib/stores/update-card-store";
 import {
@@ -192,6 +194,9 @@ export function MessageList({
           )
         )}
 
+        {/* Session progress bar */}
+        {isStreaming && <SessionProgress />}
+
         {/* Thinking indicator: show when streaming but no content yet */}
         {isStreaming && !activeCardId && !streamingContent && (
           <ThinkingIndicator />
@@ -227,6 +232,11 @@ export function MessageList({
             resolvedPlans={resolvedPlans}
             liveCard={liveCard}
           />
+        )}
+
+        {/* Session complete badge */}
+        {!isStreaming && messages.length > 0 && messages[messages.length - 1].role === "assistant" && (
+          <SessionComplete />
         )}
 
         {/* Suggestion chips */}

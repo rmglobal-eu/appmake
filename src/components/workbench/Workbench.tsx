@@ -3,18 +3,15 @@
 import { useCallback, useMemo } from "react";
 import { FileTree } from "@/components/editor/FileTree";
 import { CodeEditor } from "@/components/editor/CodeEditor";
-import { LivePreview } from "@/components/preview/LivePreview";
-import { PreviewLoadingOverlay } from "@/components/preview/PreviewLoadingOverlay";
-import { VisualEditorOverlay } from "@/components/visual-editor/VisualEditorOverlay";
 import { useEditorStore, buildFileTree } from "@/lib/stores/editor-store";
 import { useBuilderStore } from "@/lib/stores/builder-store";
 import { useSandboxStore } from "@/lib/stores/sandbox-store";
-import { ConsolePanel } from "@/components/preview/ConsolePanel";
-import { PreviewPanel } from "@/components/preview/PreviewPanel";
 import { Terminal } from "@/components/terminal/Terminal";
 import { TerminalTabs } from "@/components/terminal/TerminalTabs";
 import { useTerminalStore } from "@/lib/stores/terminal-store";
 import { getTerminalWsUrl } from "@/lib/ws/terminal-bridge";
+import { LivePreview } from "@/components/preview/LivePreview";
+import { ConsolePanel } from "@/components/preview/ConsolePanel";
 import { PanelResizer } from "./PanelResizer";
 import { TerminalSquare } from "lucide-react";
 
@@ -53,16 +50,7 @@ export function Workbench({ refreshKey = 0 }: WorkbenchProps) {
   if (fileCount === 0) {
     return (
       <div className="relative flex h-full items-center justify-center">
-        <PreviewLoadingOverlay />
-      </div>
-    );
-  }
-
-  // Visual editor view
-  if (viewMode === "visual-editor") {
-    return (
-      <div className="h-full">
-        <VisualEditorOverlay refreshKey={refreshKey} />
+        <p className="text-sm text-muted-foreground">No preview available</p>
       </div>
     );
   }
@@ -99,14 +87,8 @@ export function Workbench({ refreshKey = 0 }: WorkbenchProps) {
       <div className="flex h-full flex-col">
         <div className="relative flex-1">
           <div className="absolute inset-0">
-            {previewMode === "sandbox" && previewUrl ? (
-              <PreviewPanel url={previewUrl} />
-            ) : (
-              <LivePreview refreshKey={refreshKey} />
-            )}
+            <LivePreview />
           </div>
-          {/* Loading overlay on top of preview */}
-          {previewMode === "quick" && <PreviewLoadingOverlay />}
         </div>
         {/* Console toggle */}
         <div className="flex items-center border-t border-white/10 px-2 py-0.5 shrink-0 bg-[#0f0f14]/40">
@@ -120,8 +102,9 @@ export function Workbench({ refreshKey = 0 }: WorkbenchProps) {
             Console
           </button>
         </div>
-        {consoleVisible && (
-          <div className="h-[180px] shrink-0">
+        {/* Console panel */}
+        {consoleVisible && previewMode === "quick" && (
+          <div className="h-[180px] shrink-0 border-t border-white/10">
             <ConsolePanel />
           </div>
         )}
@@ -162,11 +145,9 @@ export function Workbench({ refreshKey = 0 }: WorkbenchProps) {
             className="h-full border shadow-lg rounded-lg overflow-hidden bg-white"
             style={{ width: viewport.width, maxWidth: viewport.maxWidth }}
           >
-            <LivePreview refreshKey={refreshKey} />
+            <LivePreview />
           </div>
         </div>
-        {/* Loading overlay on top of preview */}
-        <PreviewLoadingOverlay />
       </div>
       <div className="flex items-center border-t px-2 py-0.5 shrink-0">
         <button
@@ -179,11 +160,6 @@ export function Workbench({ refreshKey = 0 }: WorkbenchProps) {
           Console
         </button>
       </div>
-      {consoleVisible && (
-        <div className="h-[180px] shrink-0">
-          <ConsolePanel />
-        </div>
-      )}
     </div>
   );
 }

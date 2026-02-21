@@ -9,8 +9,6 @@ import { VersionHistory } from "./VersionHistory";
 import { useChatStore } from "@/lib/stores/chat-store";
 import { useEditorStore } from "@/lib/stores/editor-store";
 import { useUpdateCardStore } from "@/lib/stores/update-card-store";
-import { usePreviewErrorStore } from "@/lib/stores/preview-error-store";
-import { useGhostFix } from "@/hooks/useGhostFix";
 import { MessageParser } from "@/lib/parser/message-parser";
 import type { ChatMessage } from "@/types/chat";
 import type { UpdateCard } from "@/types/update-card";
@@ -81,9 +79,6 @@ export function ChatPanel({ chatId, projectId, initialMessages = [] }: ChatPanel
   const streamingParserRef = useRef<MessageParser | null>(null);
   const subtaskCounterRef = useRef(0);
 
-  // Silent ghost-fix for preview errors (replaces old auto-fix)
-  useGhostFix();
-
   // Initialize messages from props
   if (messages.length === 0 && initialMessages.length > 0) {
     setMessages(initialMessages);
@@ -112,16 +107,13 @@ export function ChatPanel({ chatId, projectId, initialMessages = [] }: ChatPanel
       setLiveCard(undefined);
 
       const updateCardStore = useUpdateCardStore.getState();
+      updateCardStore.startSession();
       updateCardStore.startThinking();
       updateCardStore.setCurrentStreamingFile(null);
       subtaskCounterRef.current = 0;
 
       // Capture previous files for revert
       const previousFiles = { ...useEditorStore.getState().generatedFiles };
-
-      // Clear previous errors and reset ghost fix
-      usePreviewErrorStore.getState().clearErrors();
-      usePreviewErrorStore.getState().resetGhostFixAttempts();
 
       const abortController = new AbortController();
       abortRef.current = abortController;
@@ -131,8 +123,15 @@ export function ChatPanel({ chatId, projectId, initialMessages = [] }: ChatPanel
 
       // Create streaming parser for real-time updates
       const streamingParser = new MessageParser({
+        onToolActivity: (activity) => {
+          if (activity.status === "calling") {
+            updateCardStore.setSessionPhase("researching");
+            updateCardStore.incrementToolCalls();
+          }
+        },
         onArtifactOpen: ({ id, title }) => {
           updateCardStore.stopThinking();
+          updateCardStore.setSessionPhase("building");
           updateCardStore.openCard(id, title, previousFiles);
           currentCardRef.current = {
             id: `card-${Date.now()}`,
@@ -358,6 +357,7 @@ export function ChatPanel({ chatId, projectId, initialMessages = [] }: ChatPanel
         streamingParserRef.current = null;
         updateCardStore.stopThinking();
         updateCardStore.setCurrentStreamingFile(null);
+        updateCardStore.endSession();
         setUsageRefreshKey((k) => k + 1);
       }
     },
