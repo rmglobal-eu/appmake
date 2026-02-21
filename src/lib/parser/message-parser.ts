@@ -31,10 +31,12 @@ export class MessageParser {
   }
 
   end() {
-    if (this.textBuffer) {
-      this.callbacks.onText?.(this.textBuffer);
-      this.textBuffer = "";
+    // Flush any remaining buffer content (e.g., incomplete tags) as plain text
+    if (this.buffer) {
+      this.callbacks.onText?.(this.buffer);
+      this.buffer = "";
     }
+    this.textBuffer = "";
   }
 
   private process() {
