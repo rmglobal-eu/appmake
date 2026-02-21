@@ -3,12 +3,14 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useEditorStore } from "@/lib/stores/editor-store";
 import { usePreviewStore } from "@/lib/stores/preview-store";
+import { useChatStore } from "@/lib/stores/chat-store";
 import { bundle } from "@/lib/preview/bundler";
 import { generateImportMap } from "@/lib/preview/import-map";
 import { buildPreviewHtml } from "@/lib/preview/build-preview-html";
 import type { BundleError } from "@/lib/preview/bundler";
 
-const DEBOUNCE_MS = 300;
+const DEBOUNCE_MS = 400;
+const DEBOUNCE_MS_STREAMING = 1500;
 
 export interface UsePreviewBundlerResult {
   html: string | null;
@@ -93,14 +95,18 @@ export function usePreviewBundler(): UsePreviewBundlerResult {
   }, [setStatus, setErrors, setLastBundleTime]);
 
   // Watch generatedFiles and debounce rebuilds
+  // Use longer debounce while AI is streaming to avoid bundling partial file sets
   useEffect(() => {
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
     }
 
+    const isStreaming = useChatStore.getState().isStreaming;
+    const delay = isStreaming ? DEBOUNCE_MS_STREAMING : DEBOUNCE_MS;
+
     debounceRef.current = setTimeout(() => {
       doBuild();
-    }, DEBOUNCE_MS);
+    }, delay);
 
     return () => {
       if (debounceRef.current) {
