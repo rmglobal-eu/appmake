@@ -3,6 +3,7 @@
 import { useEffect, useRef, useCallback } from "react";
 import { usePreviewBundler } from "@/hooks/usePreviewBundler";
 import { usePreviewStore } from "@/lib/stores/preview-store";
+import { useChatStore } from "@/lib/stores/chat-store";
 import { PreviewErrorOverlay } from "./PreviewErrorOverlay";
 import { Loader2 } from "lucide-react";
 
@@ -13,6 +14,7 @@ interface LivePreviewProps {
 export function LivePreview({ className = "" }: LivePreviewProps) {
   const { html, status, errors, rebuild } = usePreviewBundler();
   const { addConsoleEntry, setErrors: setStoreErrors } = usePreviewStore();
+  const isStreaming = useChatStore((s) => s.isStreaming);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const blobUrlRef = useRef<string | null>(null);
 
@@ -119,18 +121,18 @@ export function LivePreview({ className = "" }: LivePreviewProps) {
         className="h-full w-full border-0 bg-white"
       />
 
-      {/* Loading indicator (shown during bundling, overlaid on previous preview) */}
-      {status === "bundling" && (
+      {/* Loading indicator while AI is generating or bundler is working */}
+      {(isStreaming || status === "bundling") && (
         <div className="absolute inset-x-0 top-0 flex items-center justify-center">
           <div className="mt-2 flex items-center gap-2 rounded-full bg-black/70 px-3 py-1.5 text-xs text-white shadow-lg backdrop-blur-sm">
             <Loader2 className="h-3 w-3 animate-spin" />
-            Bundling...
+            {isStreaming ? "Generating..." : "Bundling..."}
           </div>
         </div>
       )}
 
-      {/* Error overlay */}
-      {status === "error" && errors.length > 0 && (
+      {/* Error overlay — only show when NOT streaming (errors during streaming are expected) */}
+      {!isStreaming && status === "error" && errors.length > 0 && (
         <PreviewErrorOverlay errors={errors} onRetry={rebuild} />
       )}
     </div>
