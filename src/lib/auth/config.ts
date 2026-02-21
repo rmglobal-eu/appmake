@@ -16,6 +16,7 @@ import { eq } from "drizzle-orm";
 const DEV_MODE = !process.env.AUTH_GITHUB_ID;
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  trustHost: true,
   adapter: DEV_MODE
     ? undefined
     : DrizzleAdapter(db, {
