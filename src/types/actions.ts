@@ -4,6 +4,13 @@ export interface FileAction {
   content: string;
 }
 
+export interface SearchReplaceAction {
+  type: "search-replace";
+  filePath: string;
+  searchBlock: string;
+  replaceBlock: string;
+}
+
 export interface ShellAction {
   type: "shell";
   command: string;
@@ -14,7 +21,7 @@ export interface StartAction {
   command: string;
 }
 
-export type Action = FileAction | ShellAction | StartAction;
+export type Action = FileAction | SearchReplaceAction | ShellAction | StartAction;
 
 export interface ActionState {
   action: Action;

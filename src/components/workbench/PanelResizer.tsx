@@ -49,7 +49,7 @@ export function PanelResizer({ direction, onResize }: PanelResizerProps) {
 
   return (
     <div
-      className={`shrink-0 bg-border hover:bg-primary/50 transition-colors ${
+      className={`shrink-0 bg-white/10 hover:bg-violet-500/50 transition-colors ${
         direction === "horizontal"
           ? "w-1 cursor-col-resize"
           : "h-1 cursor-row-resize"

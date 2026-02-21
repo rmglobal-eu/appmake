@@ -7,6 +7,8 @@ interface Shortcuts {
   onToggleSidebar?: () => void;
   onFileSearch?: () => void;
   onSendMessage?: () => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
 }
 
 export function useKeyboardShortcuts(shortcuts: Shortcuts) {
@@ -30,6 +32,25 @@ export function useKeyboardShortcuts(shortcuts: Shortcuts) {
       if (isMod && e.key === "p") {
         e.preventDefault();
         shortcuts.onFileSearch?.();
+      }
+
+      // Cmd+Z — Undo
+      if (isMod && e.key === "z" && !e.shiftKey) {
+        // Only handle if not focused on a text input/editor
+        const tag = (e.target as HTMLElement)?.tagName;
+        if (tag !== "INPUT" && tag !== "TEXTAREA" && !(e.target as HTMLElement)?.closest(".cm-editor")) {
+          e.preventDefault();
+          shortcuts.onUndo?.();
+        }
+      }
+
+      // Cmd+Shift+Z — Redo
+      if (isMod && e.key === "z" && e.shiftKey) {
+        const tag = (e.target as HTMLElement)?.tagName;
+        if (tag !== "INPUT" && tag !== "TEXTAREA" && !(e.target as HTMLElement)?.closest(".cm-editor")) {
+          e.preventDefault();
+          shortcuts.onRedo?.();
+        }
       }
     }
 

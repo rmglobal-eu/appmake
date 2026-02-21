@@ -52,18 +52,18 @@ export function VersionHistory({ chatId }: VersionHistoryProps) {
     <div className="fixed inset-y-0 right-0 z-50 flex">
       {/* Backdrop */}
       <div
-        className="flex-1 bg-black/20"
+        className="flex-1 bg-black/40"
         onClick={() => setVersionHistoryOpen(false)}
       />
 
       {/* Panel */}
-      <div className="w-80 bg-background border-l shadow-xl flex flex-col">
+      <div className="w-80 bg-[#0f0f14]/95 border-l border-white/10 shadow-2xl flex flex-col backdrop-blur-xl">
         {/* Header */}
-        <div className="flex items-center gap-2 border-b px-4 py-3 shrink-0">
-          <Clock className="h-4 w-4 text-primary" />
-          <span className="text-sm font-semibold flex-1">Version History</span>
+        <div className="flex items-center gap-2 border-b border-white/10 px-4 py-3 shrink-0">
+          <Clock className="h-4 w-4 text-violet-400" />
+          <span className="text-sm font-semibold flex-1 text-white">Version History</span>
           <button
-            className="rounded p-1 text-muted-foreground hover:text-foreground transition-colors"
+            className="rounded p-1 text-white/40 hover:text-white transition-colors"
             onClick={() => setVersionHistoryOpen(false)}
           >
             <X className="h-4 w-4" />
@@ -73,12 +73,12 @@ export function VersionHistory({ chatId }: VersionHistoryProps) {
         {/* Timeline */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {loading && (
-            <div className="text-center text-sm text-muted-foreground py-8">
+            <div className="text-center text-sm text-white/40 py-8">
               Loading snapshots...
             </div>
           )}
           {!loading && snapshots.length === 0 && (
-            <div className="text-center text-sm text-muted-foreground py-8">
+            <div className="text-center text-sm text-white/40 py-8">
               No snapshots yet. Snapshots are created automatically after each AI update.
             </div>
           )}
@@ -88,13 +88,13 @@ export function VersionHistory({ chatId }: VersionHistoryProps) {
             return (
               <div
                 key={snapshot.id}
-                className="rounded-lg border border-border/60 bg-card/50 p-3"
+                className="rounded-lg border border-white/10 bg-white/5 p-3"
               >
                 <div className="flex items-start gap-2">
-                  <div className="mt-0.5 h-2 w-2 rounded-full bg-primary shrink-0" />
+                  <div className="mt-0.5 h-2 w-2 rounded-full bg-violet-500 shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium truncate">{snapshot.title}</p>
-                    <div className="flex items-center gap-2 mt-1 text-[10px] text-muted-foreground">
+                    <p className="text-xs font-medium truncate text-white">{snapshot.title}</p>
+                    <div className="flex items-center gap-2 mt-1 text-[10px] text-white/30">
                       <span className="flex items-center gap-1">
                         <FileCode className="h-3 w-3" />
                         {fileCount} file{fileCount > 1 ? "s" : ""}
@@ -105,7 +105,7 @@ export function VersionHistory({ chatId }: VersionHistoryProps) {
                     </div>
                   </div>
                   <button
-                    className="flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground hover:bg-accent transition-colors shrink-0"
+                    className="flex items-center gap-1 rounded-md border border-white/10 px-2 py-1 text-[11px] text-white/40 hover:text-white hover:bg-white/10 transition-colors shrink-0"
                     onClick={() => handleRestore(snapshot)}
                   >
                     <RotateCcw className="h-3 w-3" />

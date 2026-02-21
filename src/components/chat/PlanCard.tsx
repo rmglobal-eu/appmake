@@ -25,14 +25,14 @@ export function PlanCard({
   const [expanded, setExpanded] = useState(true);
 
   return (
-    <div className="rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20 overflow-hidden">
+    <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 backdrop-blur-sm overflow-hidden">
       {/* Header */}
       <button
-        className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-blue-100/50 dark:hover:bg-blue-900/20"
+        className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-blue-500/10"
         onClick={() => setExpanded(!expanded)}
       >
-        <ListChecks className="h-4 w-4 text-blue-500 shrink-0" />
-        <span className="text-xs font-semibold text-blue-700 dark:text-blue-300 flex-1 truncate">
+        <ListChecks className="h-4 w-4 text-blue-400 shrink-0" />
+        <span className="text-xs font-semibold text-blue-300 flex-1 truncate">
           Plan: {title}
         </span>
         {resolved === "approved" && (
@@ -46,15 +46,15 @@ export function PlanCard({
           </span>
         )}
         {expanded ? (
-          <ChevronUp className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          <ChevronUp className="h-3.5 w-3.5 text-white/40 shrink-0" />
         ) : (
-          <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          <ChevronDown className="h-3.5 w-3.5 text-white/40 shrink-0" />
         )}
       </button>
 
       {/* Content */}
       {expanded && (
-        <div className="border-t border-blue-200/50 dark:border-blue-800/50 px-3 py-2">
+        <div className="border-t border-blue-500/15 px-3 py-2">
           <div className="prose prose-sm dark:prose-invert max-w-none prose-p:leading-relaxed prose-p:my-1 prose-headings:my-1.5 prose-headings:text-sm prose-ul:my-1 prose-ol:my-1 prose-li:my-0 text-xs">
             <Markdown>{content.trim()}</Markdown>
           </div>
@@ -65,7 +65,7 @@ export function PlanCard({
 
           {/* Approve/Reject buttons */}
           {!resolved && !isStreaming && content.trim() && (
-            <div className="flex items-center gap-2 mt-3 pt-2 border-t border-blue-200/50 dark:border-blue-800/50">
+            <div className="flex items-center gap-2 mt-3 pt-2 border-t border-blue-500/15">
               <Button
                 size="sm"
                 className="h-7 text-xs gap-1.5 bg-green-600 hover:bg-green-700 text-white"
@@ -77,7 +77,7 @@ export function PlanCard({
               <Button
                 size="sm"
                 variant="ghost"
-                className="h-7 text-xs gap-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
+                className="h-7 text-xs gap-1.5 text-red-400 hover:text-red-300 hover:bg-red-500/10"
                 onClick={onReject}
               >
                 <X className="h-3 w-3" />

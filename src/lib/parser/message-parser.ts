@@ -110,7 +110,7 @@ export class MessageParser {
       return true;
     }
 
-    // Check for <action
+    // Check for <action type="file"
     const actionFileMatch = this.buffer.match(
       /^<action\s+type="(file)"\s+filePath="([^"]*?)"\s*>/
     );
@@ -124,6 +124,26 @@ export class MessageParser {
         type: "file",
         filePath: this.currentActionFilePath,
         content: "",
+      };
+      this.callbacks.onActionOpen?.(this.currentArtifactId, action);
+      return true;
+    }
+
+    // Check for <action type="search-replace"
+    const actionSearchReplaceMatch = this.buffer.match(
+      /^<action\s+type="(search-replace)"\s+filePath="([^"]*?)"\s*>/
+    );
+    if (actionSearchReplaceMatch) {
+      this.currentActionType = actionSearchReplaceMatch[1];
+      this.currentActionFilePath = actionSearchReplaceMatch[2];
+      this.actionContent = "";
+      this.buffer = this.buffer.slice(actionSearchReplaceMatch[0].length);
+      this.state = "action";
+      const action: Action = {
+        type: "search-replace",
+        filePath: this.currentActionFilePath,
+        searchBlock: "",
+        replaceBlock: "",
       };
       this.callbacks.onActionOpen?.(this.currentArtifactId, action);
       return true;
@@ -320,6 +340,24 @@ export class MessageParser {
           filePath: this.currentActionFilePath,
           content,
         };
+      case "search-replace": {
+        // Parse <<<SEARCH ... === ... >>> format
+        const searchMatch = content.match(/<<<SEARCH\n([\s\S]*?)\n===\n([\s\S]*?)\n>>>/);
+        if (searchMatch) {
+          return {
+            type: "search-replace",
+            filePath: this.currentActionFilePath,
+            searchBlock: searchMatch[1],
+            replaceBlock: searchMatch[2],
+          };
+        }
+        // Fallback: treat as file action if format doesn't match
+        return {
+          type: "file",
+          filePath: this.currentActionFilePath,
+          content,
+        };
+      }
       case "shell":
         return { type: "shell", command: content };
       case "start":

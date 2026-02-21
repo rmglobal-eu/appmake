@@ -6,6 +6,7 @@ import {
   listFiles,
 } from "@/lib/sandbox/docker-files";
 import { touchSandbox } from "@/lib/sandbox/docker-manager";
+import { verifySandboxOwnership } from "@/lib/auth/ownership";
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -19,6 +20,11 @@ export async function POST(req: Request) {
     filePath: string;
     content: string;
   };
+
+  const owns = await verifySandboxOwnership(sandboxId, session.user.id);
+  if (!owns) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   try {
     await writeFile(containerId, filePath, content);
@@ -40,6 +46,7 @@ export async function GET(req: Request) {
   }
 
   const { searchParams } = new URL(req.url);
+  const sandboxId = searchParams.get("sandboxId");
   const containerId = searchParams.get("containerId");
   const filePath = searchParams.get("filePath");
   const listDir = searchParams.get("list");
@@ -49,6 +56,13 @@ export async function GET(req: Request) {
       { error: "containerId required" },
       { status: 400 }
     );
+  }
+
+  if (sandboxId) {
+    const owns = await verifySandboxOwnership(sandboxId, session.user.id);
+    if (!owns) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
   }
 
   try {

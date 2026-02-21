@@ -1,11 +1,38 @@
 import { WebSocketServer, WebSocket } from "ws";
 import Docker from "dockerode";
+import { createHmac } from "crypto";
 import type { IncomingMessage } from "http";
 
 const PORT = parseInt(process.env.WS_PORT || "3001", 10);
+const WS_TOKEN_SECRET = process.env.WS_TOKEN_SECRET || "appmake-ws-default-secret";
+
 const docker = new Docker({
   socketPath: process.env.DOCKER_HOST || "/var/run/docker.sock",
 });
+
+function verifyWsToken(
+  token: string
+): { userId: string; containerId: string; exp: number } | null {
+  const parts = token.split(".");
+  if (parts.length !== 2) return null;
+
+  const [payloadB64, hmac] = parts;
+  const expectedHmac = createHmac("sha256", WS_TOKEN_SECRET)
+    .update(payloadB64)
+    .digest("base64url");
+
+  if (hmac !== expectedHmac) return null;
+
+  try {
+    const payload = JSON.parse(
+      Buffer.from(payloadB64, "base64url").toString()
+    );
+    if (payload.exp < Date.now()) return null;
+    return payload;
+  } catch {
+    return null;
+  }
+}
 
 const wss = new WebSocketServer({ port: PORT });
 
@@ -13,12 +40,30 @@ console.log(`WebSocket server running on port ${PORT}`);
 
 wss.on("connection", async (ws: WebSocket, req: IncomingMessage) => {
   const url = new URL(req.url || "", `http://localhost:${PORT}`);
-  const sessionId = url.searchParams.get("session");
+  const token = url.searchParams.get("token");
   const containerId = url.searchParams.get("container");
   const type = url.searchParams.get("type") || "terminal"; // terminal | sync
 
   if (!containerId) {
     ws.close(1008, "container parameter required");
+    return;
+  }
+
+  // Verify authentication token
+  if (!token) {
+    ws.close(1008, "token parameter required");
+    return;
+  }
+
+  const tokenPayload = verifyWsToken(token);
+  if (!tokenPayload) {
+    ws.close(1008, "Invalid or expired token");
+    return;
+  }
+
+  // Ensure the token was issued for this container
+  if (tokenPayload.containerId !== containerId) {
+    ws.close(1008, "Token does not match container");
     return;
   }
 

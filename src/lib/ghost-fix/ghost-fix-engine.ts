@@ -26,7 +26,7 @@ function classifyError(message: string): ErrorCategory {
     return "package-missing";
   }
 
-  // Babel/syntax errors
+  // Syntax errors
   if (
     message.includes("SyntaxError") ||
     message.includes("Unexpected token") ||

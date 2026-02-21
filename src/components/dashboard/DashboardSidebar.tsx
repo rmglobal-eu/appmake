@@ -11,6 +11,7 @@ import {
   Users,
   Compass,
   LayoutTemplate,
+  Palette,
   Sparkles,
   Settings,
   LogOut,
@@ -156,6 +157,14 @@ export function DashboardSidebar({ user, projects, isOpen, onClose }: DashboardS
           </p>
           <NavItem icon={Compass} label="Discover" />
           <NavItem icon={LayoutTemplate} label="Templates" />
+          <NavItem
+            icon={Palette}
+            label="Design System"
+            onClick={() => {
+              router.push("/design-system");
+              onClose();
+            }}
+          />
         </div>
       </div>
 

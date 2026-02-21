@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth/config";
 import { exec } from "@/lib/sandbox/docker-exec";
 import { touchSandbox } from "@/lib/sandbox/docker-manager";
+import { verifySandboxOwnership } from "@/lib/auth/ownership";
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -20,6 +21,11 @@ export async function POST(req: Request) {
       { error: "containerId and command required" },
       { status: 400 }
     );
+  }
+
+  const owns = await verifySandboxOwnership(sandboxId, session.user.id);
+  if (!owns) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   try {

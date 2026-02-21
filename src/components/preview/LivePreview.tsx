@@ -1,10 +1,19 @@
 "use client";
 
-import { useEffect, useRef, useCallback, useState } from "react";
+import { useMemo, useCallback, useRef } from "react";
+import {
+  SandpackProvider,
+  SandpackLayout,
+  SandpackPreview,
+} from "@codesandbox/sandpack-react";
 import { useEditorStore } from "@/lib/stores/editor-store";
-import { useBuilderStore, type SelectedElement } from "@/lib/stores/builder-store";
-import { usePreviewErrorStore } from "@/lib/stores/preview-error-store";
-import { buildPreviewHtml } from "@/lib/preview/build-preview";
+import {
+  toSandpackFiles,
+  extractDependencies,
+  depsHash,
+} from "@/lib/preview/sandpack-utils";
+import { SandpackFileSyncer } from "./SandpackFileSyncer";
+import { SandpackEventBridge } from "./SandpackEventBridge";
 import { PreviewErrorBanner } from "./PreviewErrorBanner";
 
 interface LivePreviewProps {
@@ -17,121 +26,18 @@ export function LivePreview({
   visualEditorMode = false,
 }: LivePreviewProps) {
   const { generatedFiles } = useEditorStore();
-  const { setSelectedElement } = useBuilderStore();
-  const { addError, addConsoleLog, clearErrors } = usePreviewErrorStore();
-  const [iframeSrc, setIframeSrc] = useState<string>("about:blank");
-  // Keep track of current and previous blob URLs
-  // Only revoke the old-old URL when a new one is created, so the iframe
-  // always has a valid URL to display during transitions
-  const currentBlobRef = useRef<string | null>(null);
-  const previousBlobRef = useRef<string | null>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fileCount = Object.keys(generatedFiles).length;
 
-  // Build preview HTML -> blob URL with debounce
-  useEffect(() => {
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
-    }
+  const deps = useMemo(
+    () => extractDependencies(generatedFiles),
+    [generatedFiles]
+  );
+  const depKey = useMemo(() => depsHash(deps), [deps]);
 
-    debounceRef.current = setTimeout(() => {
-      const html = buildPreviewHtml(generatedFiles, visualEditorMode);
-
-      if (!html) {
-        // Don't blank out if we previously had content
-        if (fileCount === 0 && currentBlobRef.current) {
-          // Cleanup both URLs
-          if (previousBlobRef.current) URL.revokeObjectURL(previousBlobRef.current);
-          if (currentBlobRef.current) URL.revokeObjectURL(currentBlobRef.current);
-          previousBlobRef.current = null;
-          currentBlobRef.current = null;
-          setIframeSrc("about:blank");
-        }
-        return;
-      }
-
-      const blob = new Blob([html], { type: "text/html;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-
-      // Revoke the old-old URL (two generations back)
-      // This ensures the current iframe URL stays valid during the transition
-      if (previousBlobRef.current) {
-        URL.revokeObjectURL(previousBlobRef.current);
-      }
-
-      // Shift: current becomes previous, new becomes current
-      previousBlobRef.current = currentBlobRef.current;
-      currentBlobRef.current = url;
-      setIframeSrc(url);
-    }, 300);
-
-    return () => {
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-      }
-    };
-  }, [generatedFiles, refreshKey, visualEditorMode, fileCount]);
-
-  // Cleanup all blob URLs on unmount
-  useEffect(() => {
-    return () => {
-      if (previousBlobRef.current) URL.revokeObjectURL(previousBlobRef.current);
-      if (currentBlobRef.current) URL.revokeObjectURL(currentBlobRef.current);
-    };
-  }, []);
-
-  // Listen for visual editor messages from iframe
-  useEffect(() => {
-    if (!visualEditorMode) return;
-
-    function handleMessage(e: MessageEvent) {
-      if (!e.data) return;
-      if (
-        e.data.type === "visual-editor-select" ||
-        e.data.type === "visual-editor-updated"
-      ) {
-        setSelectedElement(e.data.payload as SelectedElement);
-      }
-    }
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
-  }, [visualEditorMode, setSelectedElement]);
-
-  // Listen for error + console + preview-ready messages from iframe
-  useEffect(() => {
-    function handleMessage(e: MessageEvent) {
-      if (!e.data) return;
-      if (e.data.type === "preview-ready") {
-        usePreviewErrorStore.getState().setPreviewHealthy(true);
-      }
-      if (e.data.type === "preview-error") {
-        addError({
-          message: e.data.payload.message,
-          source: e.data.payload.source,
-          line: e.data.payload.line,
-          col: e.data.payload.col,
-          isBuildError: e.data.payload.isBuildError,
-          stack: e.data.payload.stack,
-        });
-      }
-      if (e.data.type === "preview-console") {
-        addConsoleLog({
-          level: e.data.payload.level,
-          args: e.data.payload.args,
-        });
-      }
-    }
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
-  }, [addError, addConsoleLog]);
-
-  // Clear errors and reset preview health when a new preview loads
-  useEffect(() => {
-    if (iframeSrc !== "about:blank") {
-      clearErrors();
-      usePreviewErrorStore.getState().setPreviewHealthy(false);
-    }
-  }, [iframeSrc, clearErrors]);
+  const sandpackFiles = useMemo(
+    () => toSandpackFiles(generatedFiles, visualEditorMode),
+    [generatedFiles, visualEditorMode]
+  );
 
   if (fileCount === 0) {
     return (
@@ -143,13 +49,35 @@ export function LivePreview({
 
   return (
     <div className="relative h-full w-full overflow-hidden">
-      <iframe
-        key={`preview-${refreshKey}`}
-        src={iframeSrc}
-        className="h-full w-full border-none bg-white"
-        title="Live Preview"
-        allow="cross-origin-isolated"
-      />
+      <SandpackProvider
+        key={`sp-${refreshKey}-${depKey}`}
+        files={sandpackFiles}
+        customSetup={{
+          dependencies: deps,
+          environment: "create-react-app",
+        }}
+        options={{
+          externalResources: [
+            "https://cdn.tailwindcss.com",
+          ],
+          autorun: true,
+          autoReload: true,
+        }}
+        style={{ height: "100%", width: "100%" }}
+      >
+        <SandpackFileSyncer
+          generatedFiles={generatedFiles}
+          visualEditorMode={visualEditorMode}
+        />
+        <SandpackEventBridge visualEditorMode={visualEditorMode} />
+        <SandpackLayout style={{ height: "100%", width: "100%", border: "none", borderRadius: 0 }}>
+          <SandpackPreview
+            showOpenInCodeSandbox={false}
+            showRefreshButton={false}
+            style={{ height: "100%", width: "100%" }}
+          />
+        </SandpackLayout>
+      </SandpackProvider>
       <PreviewErrorBanner />
     </div>
   );
@@ -162,8 +90,10 @@ export function LivePreview({
 export function useLivePreviewBridge() {
   return useCallback(
     (payload: { text?: string; styles?: Record<string, string> }) => {
-      const iframe = document.querySelector<HTMLIFrameElement>(
-        'iframe[title="Live Preview"]'
+      // Sandpack renders inside a nested iframe — find it
+      const sandpackWrapper = document.querySelector(".sp-preview-iframe") as HTMLIFrameElement | null;
+      const iframe = sandpackWrapper || document.querySelector<HTMLIFrameElement>(
+        'iframe[title="Sandpack Preview"]'
       );
       iframe?.contentWindow?.postMessage(
         { type: "visual-editor-apply", payload },

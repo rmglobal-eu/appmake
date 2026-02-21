@@ -171,7 +171,7 @@ export function AssistantMessage({
   }, [parsed.suggestions, onSuggestionsFound]);
 
   return (
-    <div className="group relative px-4 py-3">
+    <div className="group relative px-4 py-3 text-white/90">
       <div className="space-y-3">
         {parsed.blocks.map((block, i) => {
           if (block.type === "text") {
@@ -196,7 +196,7 @@ export function AssistantMessage({
                   isError
                     ? "border border-red-500/20 bg-red-500/5 text-red-500"
                     : isCalling
-                    ? "border border-primary/20 bg-primary/5 text-primary"
+                    ? "border border-violet-500/20 bg-violet-500/5 text-violet-400"
                     : "border border-emerald-500/20 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400"
                 }`}
               >
@@ -249,7 +249,7 @@ export function AssistantMessage({
 
         {/* Streaming cursor */}
         {isStreaming && parsed.plans.length === 0 && !liveCard && parsed.artifacts.length === 0 && parsed.blocks.length === 0 && (
-          <span className="inline-block h-4 w-1 animate-pulse rounded-full bg-primary" />
+          <span className="inline-block h-4 w-1 animate-pulse rounded-full bg-violet-500" />
         )}
       </div>
 

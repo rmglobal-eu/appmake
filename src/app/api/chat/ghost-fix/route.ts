@@ -42,7 +42,7 @@ export async function POST(req: Request) {
     .map(([path, content]) => `--- ${path} ---\n${content}`)
     .join("\n\n");
 
-  const errorType = error.isBuildError ? "Build/Babel error" : "Runtime error";
+  const errorType = error.isBuildError ? "Build error" : "Runtime error";
   const errorDetail = [
     `Type: ${errorType}`,
     `Message: ${error.message}`,

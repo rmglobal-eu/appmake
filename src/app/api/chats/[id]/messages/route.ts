@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth/config";
 import { db } from "@/lib/db";
 import { messages } from "@/lib/db/schema";
 import { eq, asc } from "drizzle-orm";
+import { verifyChatOwnership } from "@/lib/auth/ownership";
 
 export async function GET(
   _req: Request,
@@ -14,6 +15,11 @@ export async function GET(
   }
 
   const { id: chatId } = await params;
+
+  const owns = await verifyChatOwnership(chatId, session.user.id);
+  if (!owns) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const chatMessages = await db.query.messages.findMany({
     where: eq(messages.chatId, chatId),

@@ -1,7 +1,7 @@
 export interface UpdateCardSubtask {
   id: string;
   label: string;
-  type: "file" | "shell" | "start";
+  type: "file" | "search-replace" | "shell" | "start";
   filePath?: string;
   status: "streaming" | "completed";
 }

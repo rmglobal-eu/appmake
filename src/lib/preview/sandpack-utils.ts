@@ -1,6 +1,156 @@
 import type { SandpackFiles } from "@codesandbox/sandpack-react";
 
 /**
+ * Auto-inject missing React imports for old code that relied on React being global.
+ * Detects usage of React hooks, React.createElement, etc. and adds the import if missing.
+ */
+function ensureReactImports(content: string): string {
+  // If the file already imports from 'react', check if it's missing specific hooks
+  const hasReactImport = /import\s+[\s\S]*?from\s+['"]react['"]/.test(content);
+
+  // Hooks that need to be imported from 'react'
+  const hooks = [
+    "useState",
+    "useEffect",
+    "useRef",
+    "useCallback",
+    "useMemo",
+    "useReducer",
+    "useContext",
+    "useLayoutEffect",
+    "useId",
+    "useDeferredValue",
+    "useTransition",
+    "useSyncExternalStore",
+    "useImperativeHandle",
+    "useDebugValue",
+    "Fragment",
+    "createContext",
+    "forwardRef",
+    "memo",
+    "lazy",
+    "Suspense",
+  ];
+
+  // Find which hooks/identifiers are used but not imported
+  const usedHooks: string[] = [];
+  for (const hook of hooks) {
+    // Check if used in code (as function call or JSX reference)
+    const usagePattern = new RegExp(`\\b${hook}\\b`);
+    if (usagePattern.test(content)) {
+      // Check if already imported
+      const importPattern = new RegExp(
+        `import\\s+\\{[^}]*\\b${hook}\\b[^}]*\\}\\s+from\\s+['"]react['"]`
+      );
+      if (!importPattern.test(content)) {
+        usedHooks.push(hook);
+      }
+    }
+  }
+
+  // Check for bare `React.` usage without React import
+  const usesReactDot = /\bReact\./.test(content);
+  const hasDefaultReactImport =
+    /import\s+React[\s,]/.test(content) || /import\s+\*\s+as\s+React/.test(content);
+
+  if (usedHooks.length === 0 && (!usesReactDot || hasDefaultReactImport)) {
+    return content;
+  }
+
+  if (hasReactImport) {
+    // There's an existing `import { ... } from 'react'` — augment it
+    if (usedHooks.length > 0) {
+      content = content.replace(
+        /import\s+\{([^}]*)\}\s+from\s+['"]react['"]/,
+        (match, existing) => {
+          const existingNames = existing.split(",").map((s: string) => s.trim()).filter(Boolean);
+          const newNames = usedHooks.filter((h) => !existingNames.includes(h));
+          if (newNames.length === 0) return match;
+          return `import { ${[...existingNames, ...newNames].join(", ")} } from 'react'`;
+        }
+      );
+    }
+  } else {
+    // No React import at all — add one
+    const parts: string[] = [];
+    if (usesReactDot && !hasDefaultReactImport) {
+      parts.push("React");
+    }
+    const namedPart = usedHooks.length > 0 ? `{ ${usedHooks.join(", ")} }` : "";
+    const defaultPart = parts.length > 0 ? parts[0] : "";
+
+    let importLine: string;
+    if (defaultPart && namedPart) {
+      importLine = `import ${defaultPart}, ${namedPart} from 'react';`;
+    } else if (defaultPart) {
+      importLine = `import ${defaultPart} from 'react';`;
+    } else {
+      importLine = `import ${namedPart} from 'react';`;
+    }
+
+    content = importLine + "\n" + content;
+  }
+
+  return content;
+}
+
+/**
+ * Ensure a source file has proper module exports for Sandpack.
+ * Old pre-Sandpack code used single-scope (no exports). This patches:
+ * - Adds `export default X` if file has a top-level function/class but no export default
+ * - Converts bare `function X()` / `class X` to `export default function X()` for App files
+ */
+function ensureModuleExports(content: string, filePath: string): string {
+  // Already has export default — nothing to do
+  if (/export\s+default\b/.test(content)) return content;
+
+  // Detect the main component/function name in this file
+  const isAppFile = /\/App\.(tsx|jsx|ts|js)$/.test(filePath);
+  const fileName = filePath.split("/").pop()!.replace(/\.(tsx|jsx|ts|js)$/, "");
+
+  // If no exports at all, try to add them
+  const hasAnyExport = /^export\s/m.test(content);
+
+  if (isAppFile) {
+    // For App files: find `function App(` and make it `export default function App(`
+    const appFnPattern = /^(function\s+App\s*\()/m;
+    if (appFnPattern.test(content)) {
+      return content.replace(appFnPattern, "export default $1");
+    }
+    // Also try `const App =`
+    const appConstPattern = /^(const\s+App\s*=)/m;
+    if (appConstPattern.test(content)) {
+      content = content.replace(appConstPattern, "export default $1");
+      // `export default const` is not valid JS — use separate export
+      content = content.replace("export default const App =", "const App =");
+      return content + "\nexport default App;\n";
+    }
+    // Fallback: append export default
+    return content + "\nexport default App;\n";
+  }
+
+  // For non-App component files: export the main component as default
+  if (!hasAnyExport) {
+    // Try to find and export the main function/class matching the filename
+    const fnPattern = new RegExp(`^(function\\s+${fileName}\\s*\\()`, "m");
+    if (fnPattern.test(content)) {
+      return content.replace(fnPattern, `export default $1`);
+    }
+    const classPattern = new RegExp(`^(class\\s+${fileName}\\b)`, "m");
+    if (classPattern.test(content)) {
+      return content.replace(classPattern, `export default $1`);
+    }
+    // Try const component
+    const constPattern = new RegExp(`^(const\\s+${fileName}\\s*=)`, "m");
+    if (constPattern.test(content)) {
+      return content + `\nexport default ${fileName};\n`;
+    }
+  }
+
+  return content;
+}
+
+/**
  * Extract npm dependencies from import statements across all files.
  * Returns Record<string, "latest"> for Sandpack's customSetup.dependencies.
  * Skips react/react-dom (included in Sandpack's react template).
@@ -44,34 +194,83 @@ export function toSandpackFiles(
   // Collect CSS file paths for importing in entry point
   const cssImports: string[] = [];
 
+  // Collect all component files (non-CSS, non-config) for auto-import into App
+  const componentFiles: string[] = [];
+
   for (const [path, content] of Object.entries(generatedFiles)) {
-    // Normalize path: ensure leading /
-    const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+    // Normalize path: ensure leading /, strip any src/ prefix.
+    // Sandpack react-ts template uses ROOT paths: /App.tsx, /index.tsx (NOT /src/)
+    const normalizedPath = "/" + path.replace(/^\/?(src\/)?/, "");
 
     if (normalizedPath.endsWith(".css")) {
-      // Strip @tailwind and @import directives (Sandpack handles Tailwind via template)
+      // Strip @tailwind and @import directives (Sandpack handles Tailwind via CDN)
       const strippedCss = content
         .replace(/@tailwind\s+[^;]+;/g, "")
         .replace(/@import\s+[^;]+;/g, "")
         .trim();
-      files[normalizedPath] = strippedCss;
+      files[normalizedPath] = { code: strippedCss };
       cssImports.push(normalizedPath);
     } else {
-      files[normalizedPath] = content;
+      let processed = content;
+
+      // Ensure .tsx/.jsx/.ts/.js files have proper imports and exports for the module system.
+      // Old code (pre-Sandpack) used single-scope with no imports/exports — patch both.
+      if (/\.(tsx|jsx|ts|js)$/.test(normalizedPath)) {
+        processed = ensureReactImports(processed);
+        processed = ensureModuleExports(processed, normalizedPath);
+
+        // Track non-App component files for potential auto-import
+        if (!/(?:^|\/)App\.(tsx|jsx|ts|js)$/.test(normalizedPath) &&
+            !/(?:^|\/)(?:index|main)\.(tsx|jsx|ts|js)$/.test(normalizedPath) &&
+            !normalizedPath.includes(".config")) {
+          componentFiles.push(normalizedPath);
+        }
+      }
+
+      files[normalizedPath] = { code: processed };
+    }
+  }
+
+  // If App file exists but doesn't import its sibling components, inject imports.
+  // This handles old code where all files shared a single scope (no imports).
+  const appPath = Object.keys(files).find((p) =>
+    /\/App\.(tsx|jsx|ts|js)$/.test(p)
+  );
+  if (appPath) {
+    const appFile = files[appPath] as { code: string };
+    let appContent = appFile.code;
+    const missingImports: string[] = [];
+    for (const compPath of componentFiles) {
+      const compName = compPath
+        .split("/")
+        .pop()!
+        .replace(/\.(tsx|jsx|ts|js)$/, "");
+      // Only inject if the component name is used in App but not imported
+      if (
+        appContent.includes(compName) &&
+        !appContent.includes(`from`) // no imports at all
+      ) {
+        const relPath = "." + compPath.replace(/\.(tsx|jsx|ts|js)$/, "");
+        missingImports.push(`import ${compName} from "${relPath}";`);
+      }
+    }
+    if (missingImports.length > 0) {
+      appContent = missingImports.join("\n") + "\n\n" + appContent;
+      files[appPath] = { code: appContent };
     }
   }
 
   // Include visual editor bridge module if needed
   if (visualEditorMode) {
-    files["/__bridge.ts"] = getVisualEditorBridgeModule();
+    files["/__bridge.ts"] = { code: getVisualEditorBridgeModule() };
   }
 
   // Always include error overlay bridge for "Fix with AI" in-iframe button
-  files["/__error-bridge.ts"] = getErrorOverlayBridgeModule();
+  files["/__error-bridge.ts"] = { code: getErrorOverlayBridgeModule() };
 
-  // Generate entry point that imports App + CSS + optional bridge
+  // Override template's /index.tsx entry point to include CSS + bridge imports
   const cssImportLines = cssImports
-    .map((p) => `import "${p.startsWith("/") ? "." + p : p}";`)
+    .map((p) => `import ".${p}";`)
     .join("\n");
   const bridgeImport = visualEditorMode ? 'import "./__bridge";\n' : "";
 
@@ -85,6 +284,41 @@ ${bridgeImport}import "./__error-bridge";
 const root = createRoot(document.getElementById("root")!);
 root.render(<App />);
 `,
+    hidden: true,
+  };
+
+  // Provide HTML and config since we're not using a template
+  files["/public/index.html"] = {
+    code: `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>Preview</title></head>
+<body><div id="root"></div></body>
+</html>`,
+    hidden: true,
+  };
+
+  files["/tsconfig.json"] = {
+    code: JSON.stringify({
+      compilerOptions: {
+        jsx: "react-jsx",
+        module: "esnext",
+        moduleResolution: "node",
+        esModuleInterop: true,
+        strict: false,
+        target: "es2020",
+      },
+    }),
+    hidden: true,
+  };
+
+  files["/package.json"] = {
+    code: JSON.stringify({
+      main: "/index.tsx",
+      dependencies: {
+        react: "^18",
+        "react-dom": "^18",
+      },
+    }),
     hidden: true,
   };
 

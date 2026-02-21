@@ -36,6 +36,80 @@ export function buildFileContext(
   return parts.join("\n\n");
 }
 
+/**
+ * Build a smart context that prioritizes relevant files.
+ * - Always includes: active file, App.tsx, files mentioned in the user's message
+ * - For remaining files: includes only the file tree listing (paths, not content)
+ * - Respects MAX_TOTAL_SIZE to keep API requests reasonable
+ */
+export function buildSmartContext(
+  allFiles: Record<string, string>,
+  userMessage: string,
+  activeFilePath?: string | null
+): string {
+  const parts: string[] = [];
+  let totalSize = 0;
+
+  // Determine priority files
+  const priorityPaths = new Set<string>();
+
+  // Always include App.tsx
+  for (const path of Object.keys(allFiles)) {
+    if (/App\.(tsx|jsx|ts|js)$/.test(path)) {
+      priorityPaths.add(path);
+    }
+  }
+
+  // Include active file
+  if (activeFilePath && allFiles[activeFilePath]) {
+    priorityPaths.add(activeFilePath);
+  }
+
+  // Include files mentioned in the user message
+  for (const path of Object.keys(allFiles)) {
+    const fileName = path.split("/").pop() || path;
+    if (userMessage.includes(fileName) || userMessage.includes(path)) {
+      priorityPaths.add(path);
+    }
+  }
+
+  // Add priority files with full content
+  for (const path of priorityPaths) {
+    const content = allFiles[path];
+    if (!content) continue;
+    if (totalSize + content.length > MAX_TOTAL_SIZE) break;
+    parts.push(`--- ${path} ---\n${content}`);
+    totalSize += content.length;
+  }
+
+  // Add remaining files with full content if space allows, otherwise just listing
+  const remainingPaths = Object.keys(allFiles).filter((p) => !priorityPaths.has(p)).sort();
+
+  if (remainingPaths.length > 0) {
+    // Try to include remaining files with content
+    const includedFull: string[] = [];
+    const listingOnly: string[] = [];
+
+    for (const path of remainingPaths) {
+      const content = allFiles[path];
+      if (totalSize + content.length <= MAX_TOTAL_SIZE) {
+        includedFull.push(`--- ${path} ---\n${content}`);
+        totalSize += content.length;
+      } else {
+        listingOnly.push(path);
+      }
+    }
+
+    parts.push(...includedFull);
+
+    if (listingOnly.length > 0) {
+      parts.push(`\n--- Other files (content not shown) ---\n${listingOnly.join("\n")}`);
+    }
+  }
+
+  return parts.join("\n\n");
+}
+
 export function buildFileTreeString(entries: FileEntry[], indent = ""): string {
   const lines: string[] = [];
 

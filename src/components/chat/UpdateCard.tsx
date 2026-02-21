@@ -110,7 +110,7 @@ export function UpdateCard({ card, title, actions, previousFiles }: UpdateCardPr
     if (actions) {
       return actions.map((a, i) => ({
         id: `action-${i}`,
-        label: a.action.type === "file" ? a.action.filePath : a.action.type === "shell" ? a.action.command : a.action.command,
+        label: a.action.type === "file" ? a.action.filePath : a.action.type === "search-replace" ? a.action.filePath : a.action.type === "shell" ? a.action.command : a.action.command,
         type: a.action.type,
         status: a.status === "completed" ? "completed" : "streaming",
         filePath: a.action.type === "file" ? a.action.filePath : undefined,
@@ -178,17 +178,17 @@ export function UpdateCard({ card, title, actions, previousFiles }: UpdateCardPr
 
   return (
     <div
-      className={`relative rounded-xl border overflow-hidden transition-all duration-300 ${
+      className={`relative rounded-xl border overflow-hidden transition-all duration-300 backdrop-blur-sm ${
         isStreaming
-          ? "border-primary/30 bg-gradient-to-b from-primary/5 to-card/80 shadow-lg shadow-primary/5"
-          : "border-border/50 bg-card/60"
+          ? "border-violet-500/30 bg-gradient-to-b from-violet-500/10 to-white/5 shadow-lg shadow-violet-500/5"
+          : "border-white/10 bg-white/5"
       }`}
     >
       {/* Animated top border during streaming */}
       {isStreaming && (
         <div className="absolute top-0 left-0 right-0 h-0.5 overflow-hidden">
           <div
-            className="h-full w-1/3 rounded-full bg-gradient-to-r from-transparent via-primary to-transparent"
+            className="h-full w-1/3 rounded-full bg-gradient-to-r from-transparent via-violet-500 to-transparent"
             style={{ animation: "progress-indeterminate 1.5s ease-in-out infinite" }}
           />
         </div>
@@ -198,8 +198,8 @@ export function UpdateCard({ card, title, actions, previousFiles }: UpdateCardPr
       <div className="flex items-center gap-2.5 px-4 py-3">
         {isStreaming ? (
           <div className="relative flex h-6 w-6 items-center justify-center">
-            <div className="absolute inset-0 animate-ping rounded-full bg-primary/15" />
-            <Sparkles className="relative h-4 w-4 text-primary animate-pulse" />
+            <div className="absolute inset-0 animate-ping rounded-full bg-violet-500/15" />
+            <Sparkles className="relative h-4 w-4 text-violet-400 animate-pulse" />
           </div>
         ) : (
           <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/10">
@@ -207,7 +207,7 @@ export function UpdateCard({ card, title, actions, previousFiles }: UpdateCardPr
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <span className="text-sm font-semibold text-foreground">{cardTitle}</span>
+          <span className="text-sm font-semibold text-white">{cardTitle}</span>
           {/* Stats summary */}
           <div className="flex items-center gap-2 mt-0.5">
             {filesCreated > 0 && (
@@ -233,9 +233,9 @@ export function UpdateCard({ card, title, actions, previousFiles }: UpdateCardPr
 
       {/* Progress bar during streaming */}
       {isStreaming && totalCount > 0 && (
-        <div className="mx-4 mb-2 h-1 rounded-full bg-primary/10 overflow-hidden">
+        <div className="mx-4 mb-2 h-1 rounded-full bg-white/10 overflow-hidden">
           <div
-            className="h-full rounded-full bg-primary transition-all duration-500 ease-out"
+            className="h-full rounded-full bg-gradient-to-r from-violet-500 to-pink-500 transition-all duration-500 ease-out"
             style={{ width: `${Math.max(5, (completedCount / totalCount) * 100)}%` }}
           />
         </div>
@@ -243,24 +243,24 @@ export function UpdateCard({ card, title, actions, previousFiles }: UpdateCardPr
 
       {/* Subtask list */}
       {subtasks.length > 0 && (
-        <div className="border-t border-border/30 mx-2">
+        <div className="border-t border-white/10 mx-2">
           {subtasks.map((subtask) => (
             <button
               key={subtask.id}
               className={`flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-xs transition-colors ${
                 subtask.type === "file"
-                  ? "cursor-pointer hover:bg-accent/50"
+                  ? "cursor-pointer hover:bg-white/10"
                   : "cursor-default"
-              } ${subtask.status === "streaming" ? "bg-primary/5" : ""}`}
+              } ${subtask.status === "streaming" ? "bg-violet-500/10" : ""}`}
               onClick={() => handleSubtaskClick(subtask)}
             >
               <SubtaskStatus status={subtask.status} />
               <SubtaskIcon type={subtask.type} />
-              <span className="truncate font-mono text-[11px] text-muted-foreground">
+              <span className="truncate font-mono text-[11px] text-white/60">
                 {subtask.label}
               </span>
               {subtask.status === "streaming" && (
-                <span className="ml-auto shrink-0 text-[9px] font-medium text-primary">
+                <span className="ml-auto shrink-0 text-[9px] font-medium text-violet-400">
                   writing...
                 </span>
               )}
@@ -271,9 +271,9 @@ export function UpdateCard({ card, title, actions, previousFiles }: UpdateCardPr
 
       {/* Footer buttons */}
       {!isStreaming && subtasks.length > 0 && (
-        <div className="flex items-center gap-1 border-t border-border/30 px-3 py-2">
+        <div className="flex items-center gap-1 border-t border-white/10 px-3 py-2">
           <button
-            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-white/40 hover:bg-white/10 hover:text-white transition-colors"
             onClick={() => setDetailsOpen(!detailsOpen)}
           >
             {detailsOpen ? (
@@ -284,7 +284,7 @@ export function UpdateCard({ card, title, actions, previousFiles }: UpdateCardPr
             Details
           </button>
           <button
-            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-white/40 hover:bg-white/10 hover:text-white transition-colors"
             onClick={handlePreview}
           >
             <Eye className="h-3 w-3" />
@@ -292,7 +292,7 @@ export function UpdateCard({ card, title, actions, previousFiles }: UpdateCardPr
           </button>
           {Object.keys(prevFiles).length > 0 && (
             <button
-              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors ml-auto"
+              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-white/40 hover:bg-white/10 hover:text-white transition-colors ml-auto"
               onClick={handleRevert}
             >
               <Undo2 className="h-3 w-3" />
@@ -304,12 +304,12 @@ export function UpdateCard({ card, title, actions, previousFiles }: UpdateCardPr
 
       {/* Diff details panel */}
       {detailsOpen && fileDiffs.length > 0 && (
-        <div className="border-t border-border/30 bg-muted/20">
+        <div className="border-t border-white/10 bg-white/[0.02]">
           {fileDiffs.map((fd) => (
-            <div key={fd.path} className="border-b border-border/20 last:border-b-0">
+            <div key={fd.path} className="border-b border-white/5 last:border-b-0">
               <div className="flex items-center gap-2 px-3 py-2">
-                <FileCode className="h-3 w-3 text-muted-foreground" />
-                <span className="text-[11px] font-mono text-muted-foreground">{fd.path}</span>
+                <FileCode className="h-3 w-3 text-white/40" />
+                <span className="text-[11px] font-mono text-white/50">{fd.path}</span>
                 {fd.isNew && (
                   <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[9px] font-medium text-emerald-600 dark:text-emerald-400">
                     New

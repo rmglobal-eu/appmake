@@ -228,7 +228,7 @@ export default function ChatPage() {
   const handleSupabaseConnect = useCallback((url: string, anonKey: string) => {
     // Store Supabase config so AI can reference it
     const store = useEditorStore.getState();
-    store.addGeneratedFile("supabase-config.ts", `// Supabase Configuration\nvar SUPABASE_URL = "${url}";\nvar SUPABASE_ANON_KEY = "${anonKey}";\nvar supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);\n`);
+    store.addGeneratedFile("supabase-config.ts", `import { createClient } from '@supabase/supabase-js';\n\nexport const SUPABASE_URL = "${url}";\nexport const SUPABASE_ANON_KEY = "${anonKey}";\nexport const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);\n`);
   }, []);
 
   const handleFigmaImport = useCallback((description: string, imageUrl: string | null) => {
@@ -256,10 +256,10 @@ export default function ChatPage() {
 
   if (loading) {
     return (
-      <div className="flex h-screen flex-col">
+      <div className="flex h-screen flex-col bg-[#0a0a10]">
         <BuilderHeader {...headerProps} />
         <div className="flex flex-1 items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-500 border-t-transparent" />
         </div>
       </div>
     );
@@ -268,14 +268,14 @@ export default function ChatPage() {
   // Mobile
   if (isMobile) {
     return (
-      <div className="flex h-screen flex-col">
+      <div className="flex h-screen flex-col bg-[#0a0a10]">
         <BuilderHeader {...headerProps} />
-        <div className="flex shrink-0 border-b">
+        <div className="flex shrink-0 border-b border-white/10">
           <button
             className={`flex-1 py-2 text-center text-xs font-medium ${
               mobileView === "chat"
-                ? "border-b-2 border-primary text-foreground"
-                : "text-muted-foreground"
+                ? "border-b-2 border-violet-500 text-white"
+                : "text-white/40"
             }`}
             onClick={() => setMobileView("chat")}
           >
@@ -284,8 +284,8 @@ export default function ChatPage() {
           <button
             className={`flex-1 py-2 text-center text-xs font-medium ${
               mobileView === "code"
-                ? "border-b-2 border-primary text-foreground"
-                : "text-muted-foreground"
+                ? "border-b-2 border-violet-500 text-white"
+                : "text-white/40"
             }`}
             onClick={() => setMobileView("code")}
           >
@@ -315,11 +315,11 @@ export default function ChatPage() {
 
   // Desktop — two panel layout
   return (
-    <div className="flex h-screen flex-col">
+    <div className="flex h-screen flex-col bg-[#0a0a10]">
       <BuilderHeader {...headerProps} />
       <div className="flex min-h-0 flex-1">
         {/* Chat — resizable width */}
-        <div className="flex shrink-0 flex-col border-r" style={{ width: chatWidth }}>
+        <div className="flex shrink-0 flex-col border-r border-white/10" style={{ width: chatWidth }}>
           {chatId && <ChatPanel chatId={chatId} projectId={projectId} />}
         </div>
 

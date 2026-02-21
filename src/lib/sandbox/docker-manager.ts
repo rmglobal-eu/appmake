@@ -46,6 +46,10 @@ export async function createSandbox(
         PidsLimit: RESOURCE_LIMITS.PidsLimit,
         NetworkMode: "bridge",
         AutoRemove: false,
+        SecurityOpt: ["no-new-privileges"],
+        CapDrop: ["ALL"],
+        CapAdd: ["CHOWN", "SETUID", "SETGID", "NET_BIND_SERVICE"],
+        ReadonlyRootfs: false,
       },
       Labels: {
         "appmake.project": projectId,

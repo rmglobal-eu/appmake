@@ -11,7 +11,7 @@ interface SandpackFileSyncerProps {
 /**
  * Renderless component that syncs editor store files into Sandpack
  * via updateFile(), enabling HMR instead of full remounts.
- * Skips updates when visualEditPending is true (DOM already updated via postMessage).
+ * Skips the first run (files already provided via SandpackProvider props).
  */
 export function SandpackFileSyncer({
   generatedFiles,
@@ -19,16 +19,23 @@ export function SandpackFileSyncer({
 }: SandpackFileSyncerProps) {
   const { sandpack } = useSandpack();
   const prevFilesRef = useRef<string>("");
+  const isFirstRun = useRef(true);
   const visualEditPending = useBuilderStore((s) => s.visualEditPending);
 
   useEffect(() => {
     // Skip Sandpack update when a visual edit just happened
-    // (the DOM was already updated via postMessage, source was synced for persistence)
     if (visualEditPending) return;
 
     const serialized = JSON.stringify(generatedFiles);
     if (serialized === prevFilesRef.current) return;
     prevFilesRef.current = serialized;
+
+    // Skip the first run — files are already provided via SandpackProvider props.
+    // Only sync subsequent changes for HMR.
+    if (isFirstRun.current) {
+      isFirstRun.current = false;
+      return;
+    }
 
     const sandpackFiles = toSandpackFiles(generatedFiles, visualEditorMode);
 

@@ -35,7 +35,7 @@ export function SandpackEventBridge({
   // Listen to Sandpack events
   useEffect(() => {
     const unsub = listen((msg) => {
-      if (msg.type === "success") {
+      if (msg.type === "success" || (msg.type === "done" && !(msg as any).compilatonError)) {
         if (!hasSignaledReady.current) {
           hasSignaledReady.current = true;
           usePreviewErrorStore.getState().setPreviewHealthy(true);
