@@ -131,10 +131,7 @@ function detectEntryPoint(files: Record<string, string>): EntryInfo | null {
   for (const candidate of BOOTSTRAP_FILES) {
     if (candidate in files) {
       const content = files[candidate];
-      // Verify it actually has mounting logic AND looks like valid code
-      const trimmed = content.trimStart();
-      const looksLikeCode = /^[a-zA-Z"'`/]/.test(trimmed[0] || "");
-      if (looksLikeCode && (content.includes("createRoot") || content.includes("render") || content.includes("ReactDOM"))) {
+      if (content.includes("createRoot") || content.includes("render") || content.includes("ReactDOM")) {
         return { file: candidate, isSelfMounting: true };
       }
     }
@@ -174,58 +171,49 @@ function isBareSpecifier(path: string): boolean {
 }
 
 // ---------------------------------------------------------------------------
-// Build a normalized file map (strip src/ prefix from all keys)
+// File filtering — KEY-BASED ONLY, no content validation
 // ---------------------------------------------------------------------------
 
 /** Extensions that esbuild can actually bundle */
 const BUNDLEABLE_EXT = [".tsx", ".ts", ".jsx", ".js", ".css", ".json"];
 
-/** Config/build files that should NOT be bundled even if they have a valid extension */
-const SKIP_FILES = [
+/** Config/build files that should NOT be bundled */
+const SKIP_PATTERNS = [
   "vite.config", "tsconfig", "postcss.config", "tailwind.config",
   "next.config", "jest.config", "babel.config", "eslint",
   "package.json", "package-lock.json",
 ];
 
-function isBundleable(key: string, content: string): boolean {
-  // Skip shell commands (e.g. "npm install", CDATA entries)
+function shouldIncludeFile(key: string): boolean {
+  // Must have a file extension
   if (!key.includes(".")) return false;
+
+  // Skip CDATA entries (shell commands from artifact parser)
   if (key.includes("CDATA")) return false;
 
-  // Skip HTML files (index.html, etc.)
-  if (key.endsWith(".html")) return false;
+  // Skip HTML files
+  if (key.endsWith(".html") || key.endsWith(".htm")) return false;
 
   // Skip config/build files
   const lower = key.toLowerCase();
-  for (const skip of SKIP_FILES) {
-    if (lower.includes(skip)) return false;
+  for (const pattern of SKIP_PATTERNS) {
+    if (lower.includes(pattern)) return false;
   }
 
-  // Only include files with bundleable extensions
-  const hasBundleableExt = BUNDLEABLE_EXT.some((ext) => key.endsWith(ext));
-  if (!hasBundleableExt) return false;
-
-  // Skip files whose content looks like non-code
-  const trimmed = content.trimStart();
-  if (trimmed.length === 0) return false;
-  if (trimmed.startsWith("<!") || trimmed.startsWith("<html") || trimmed.startsWith("<head")) return false;
-
-  // For code files (.ts/.tsx/.js/.jsx), validate the first character is plausible JS/TS
-  const codeExts = [".tsx", ".ts", ".jsx", ".js"];
-  if (codeExts.some((ext) => key.endsWith(ext))) {
-    const firstChar = trimmed[0];
-    // Valid JS/TS starts: letters, quotes, /, (, [, {, #, _, $, backtick
-    const validStarts = /^[a-zA-Z"'`/\(\[\{#_$@]/;
-    if (!validStarts.test(firstChar)) return false;
-  }
+  // Skip non-bundleable extensions
+  if (!BUNDLEABLE_EXT.some((ext) => key.endsWith(ext))) return false;
 
   return true;
 }
 
+// ---------------------------------------------------------------------------
+// Build the normalized file map
+// ---------------------------------------------------------------------------
+
 function normalizeFileMap(files: Record<string, string>): Record<string, string> {
   const result: Record<string, string> = {};
   for (const [key, value] of Object.entries(files)) {
-    if (!isBundleable(key, value)) continue;
+    if (!shouldIncludeFile(key)) continue;
     result[stripPrefix(key)] = value;
   }
   return result;
@@ -245,14 +233,23 @@ export async function bundle(
     };
   }
 
-  // Normalize all file keys (strip src/, ./, etc.)
+  // Normalize all file keys (strip src/, ./, etc.) and filter non-bundleable files
   const normalizedFiles = normalizeFileMap(files);
+
+  if (Object.keys(normalizedFiles).length === 0) {
+    return {
+      success: false, code: "", css: "", externals: [],
+      errors: [{ text: "No bundleable code files found" }], warnings: [], entryPoint: "",
+    };
+  }
 
   const entryInfo = detectEntryPoint(normalizedFiles);
   if (!entryInfo) {
+    // Debug: log what files we have so we can diagnose
+    const fileKeys = Object.keys(normalizedFiles).join(", ");
     return {
       success: false, code: "", css: "", externals: [],
-      errors: [{ text: "No entry point found (App.tsx, main.tsx, or index.tsx)" }],
+      errors: [{ text: `No entry point found. Available files: ${fileKeys}` }],
       warnings: [], entryPoint: "",
     };
   }
