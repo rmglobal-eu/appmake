@@ -19,7 +19,7 @@ export async function GET() {
     return Response.json({ used: 0, limit: DEFAULT_DAILY_LIMIT, resetsAt: null });
   }
 
-  const DAILY_LIMIT = (user as Record<string, unknown>).messageLimit as number ?? DEFAULT_DAILY_LIMIT;
+  const DAILY_LIMIT = user.messageLimit ?? DEFAULT_DAILY_LIMIT;
 
   let { dailyMessageCount, messageCountResetAt } = user;
   const now = new Date();

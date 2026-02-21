@@ -46,7 +46,7 @@ export async function POST(req: Request) {
   }
 
   let { dailyMessageCount, messageCountResetAt } = user;
-  const DAILY_LIMIT = (user as Record<string, unknown>).messageLimit as number ?? DEFAULT_DAILY_LIMIT;
+  const DAILY_LIMIT = user.messageLimit ?? DEFAULT_DAILY_LIMIT;
   const now = new Date();
   const msSinceReset = now.getTime() - messageCountResetAt.getTime();
   const twentyFourHours = 24 * 60 * 60 * 1000;
