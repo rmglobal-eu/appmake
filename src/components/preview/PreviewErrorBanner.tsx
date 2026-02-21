@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { AlertTriangle, ChevronDown, ChevronRight, Wrench, X, Check, Loader2 } from "lucide-react";
+import { AlertTriangle, ChevronDown, ChevronRight, Wrench, X, Check, Loader2, MessageSquare, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { usePreviewErrorStore, type PreviewError, type GhostFixStatus } from "@/lib/stores/preview-error-store";
 
 export function PreviewErrorBanner() {
-  const { errors, ghostFixStatus, clearErrors, requestManualGhostFix } =
+  const { errors, ghostFixStatus, ghostFixMessage, clearErrors, requestManualGhostFix } =
     usePreviewErrorStore();
   const [expanded, setExpanded] = useState(false);
 
@@ -23,7 +23,7 @@ export function PreviewErrorBanner() {
       <div className="absolute bottom-3 left-3 z-10 flex items-center gap-2 rounded-full bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 px-3 py-1.5 shadow-sm">
         <Loader2 className="h-3 w-3 text-amber-500 animate-spin" />
         <span className="text-[11px] text-amber-700 dark:text-amber-400 font-medium">
-          {ghostFixStatus === "fixing" ? "Fixing preview..." : "Verifying fix..."}
+          {ghostFixMessage || (ghostFixStatus === "fixing" ? "Fixing preview..." : "Verifying fix...")}
         </span>
       </div>
     );
@@ -41,10 +41,45 @@ export function PreviewErrorBanner() {
     );
   }
 
+  // Failed state — auto-fix exhausted all attempts
+  if (ghostFixStatus === "failed" && errors.length > 0) {
+    return (
+      <div className="absolute bottom-0 left-0 right-0 z-10 border-t border-red-300 bg-red-50 dark:bg-red-950/30 dark:border-red-800">
+        <div className="flex flex-col gap-2 px-3 py-3">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-3.5 w-3.5 text-red-500 shrink-0" />
+            <span className="text-xs text-red-700 dark:text-red-400 font-medium flex-1">
+              Auto-fix could not solve the error
+            </span>
+            <button
+              className="rounded p-0.5 text-muted-foreground hover:text-foreground transition-colors"
+              onClick={clearErrors}
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              className="flex items-center gap-1 rounded-md bg-red-100 dark:bg-red-900/30 px-2.5 py-1.5 text-[11px] text-red-700 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors font-medium"
+              onClick={() => requestManualGhostFix()}
+            >
+              <RotateCcw className="h-3 w-3" />
+              Try again
+            </button>
+            <span className="text-[10px] text-red-400 dark:text-red-500 flex items-center gap-1">
+              <MessageSquare className="h-3 w-3" />
+              Tip: describe the error in chat for help
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // No errors — nothing to show
   if (errors.length === 0) return null;
 
-  // Failed state or errors with no active fix — show error banner
+  // Errors with no active fix — show error banner
   return (
     <div className="absolute bottom-0 left-0 right-0 z-10 border-t border-red-300 bg-red-50 dark:bg-red-950/30 dark:border-red-800">
       {/* Header */}

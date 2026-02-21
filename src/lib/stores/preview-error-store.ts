@@ -24,6 +24,7 @@ interface PreviewErrorStore {
   errors: PreviewError[];
   consoleLogs: ConsoleLog[];
   ghostFixStatus: GhostFixStatus;
+  ghostFixMessage: string;
   previewHealthy: boolean;
   ghostFixAttempts: number;
 
@@ -32,6 +33,7 @@ interface PreviewErrorStore {
   clearErrors: () => void;
   clearConsoleLogs: () => void;
   setGhostFixStatus: (status: GhostFixStatus) => void;
+  setGhostFixMessage: (message: string) => void;
   setPreviewHealthy: (healthy: boolean) => void;
   incrementGhostFixAttempts: () => void;
   resetGhostFixAttempts: () => void;
@@ -49,6 +51,7 @@ export const usePreviewErrorStore = create<PreviewErrorStore>((set, get) => ({
   errors: [],
   consoleLogs: [],
   ghostFixStatus: "idle",
+  ghostFixMessage: "",
   previewHealthy: false,
   ghostFixAttempts: 0,
   pendingManualGhostFix: false,
@@ -72,6 +75,7 @@ export const usePreviewErrorStore = create<PreviewErrorStore>((set, get) => ({
   clearErrors: () => set({ errors: [] }),
   clearConsoleLogs: () => set({ consoleLogs: [] }),
   setGhostFixStatus: (ghostFixStatus) => set({ ghostFixStatus }),
+  setGhostFixMessage: (ghostFixMessage) => set({ ghostFixMessage }),
   setPreviewHealthy: (previewHealthy) => set({ previewHealthy }),
   incrementGhostFixAttempts: () =>
     set((state) => ({ ghostFixAttempts: state.ghostFixAttempts + 1 })),

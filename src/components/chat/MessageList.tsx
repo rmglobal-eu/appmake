@@ -6,9 +6,57 @@ import { AssistantMessage } from "./AssistantMessage";
 import { ThinkingIndicator } from "./ThinkingIndicator";
 import { SuggestionChips } from "./SuggestionChips";
 import { useUpdateCardStore } from "@/lib/stores/update-card-store";
-import { FileCode, Loader2 } from "lucide-react";
+import {
+  FileCode,
+  Loader2,
+  Globe,
+  LayoutDashboard,
+  ShoppingCart,
+  User,
+  BookOpen,
+  Smartphone,
+} from "lucide-react";
 import type { ChatMessage } from "@/types/chat";
 import type { UpdateCard } from "@/types/update-card";
+
+const STARTER_CARDS = [
+  {
+    icon: Globe,
+    label: "Landing Page",
+    prompt:
+      "Build a modern landing page with a hero section, features grid, pricing table, testimonials, and footer. Use a clean design with gradients and smooth animations.",
+  },
+  {
+    icon: LayoutDashboard,
+    label: "Dashboard",
+    prompt:
+      "Create an analytics dashboard with stat cards, line/bar charts using recharts, a data table with sorting, and a sidebar navigation. Use a professional dark theme.",
+  },
+  {
+    icon: ShoppingCart,
+    label: "E-commerce",
+    prompt:
+      "Build a product listing page with product cards showing images, prices, and ratings. Include a cart icon with item count, add-to-cart buttons, and category filters.",
+  },
+  {
+    icon: User,
+    label: "Portfolio",
+    prompt:
+      "Create a personal portfolio with a hero section, project gallery with hover effects, about section, skills grid, and a contact form. Use elegant typography and spacing.",
+  },
+  {
+    icon: BookOpen,
+    label: "Blog",
+    prompt:
+      "Build a blog with article cards showing thumbnails, titles, excerpts, and dates. Include category filters, a featured post section, and a reading view for articles.",
+  },
+  {
+    icon: Smartphone,
+    label: "Mobile App",
+    prompt:
+      "Create a mobile-first app interface with bottom tab navigation, content cards, a floating action button, pull-to-refresh style header, and smooth transitions between views.",
+  },
+];
 
 interface MessageListProps {
   messages: ChatMessage[];
@@ -94,10 +142,31 @@ export function MessageList({
     >
       <div className="pb-4">
         {messages.length === 0 && !isStreaming && (
-          <div className="flex h-full min-h-[300px] items-center justify-center">
-            <div className="text-center text-muted-foreground">
-              <p className="text-lg font-medium">What do you want to build?</p>
-              <p className="mt-1 text-sm">Describe your app and I&apos;ll generate the code.</p>
+          <div className="flex h-full min-h-[400px] items-center justify-center px-4">
+            <div className="w-full max-w-lg text-center">
+              <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-pink-600">
+                <span className="text-lg font-bold text-white">A</span>
+              </div>
+              <h2 className="text-lg font-semibold text-white/90">
+                What do you want to build?
+              </h2>
+              <p className="mt-1 text-sm text-white/40">
+                Pick a template or describe your app
+              </p>
+              <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {STARTER_CARDS.map((card) => (
+                  <button
+                    key={card.label}
+                    onClick={() => onSendMessage?.(card.prompt)}
+                    className="group flex flex-col items-center gap-2 rounded-xl border border-white/10 bg-white/5 p-4 text-center transition-all hover:border-violet-500/30 hover:bg-violet-500/10"
+                  >
+                    <card.icon className="h-5 w-5 text-white/40 group-hover:text-violet-400 transition-colors" />
+                    <span className="text-xs font-medium text-white/60 group-hover:text-white/90 transition-colors">
+                      {card.label}
+                    </span>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -131,18 +200,18 @@ export function MessageList({
         {/* Streaming file indicator - prominent banner */}
         {isStreaming && currentStreamingFile && (
           <div className="px-4 py-2">
-            <div className="relative flex items-center gap-2.5 overflow-hidden rounded-lg border border-blue-500/20 bg-blue-500/5 px-3.5 py-2.5">
+            <div className="relative flex items-center gap-2.5 overflow-hidden rounded-lg border border-violet-500/20 bg-violet-500/5 px-3.5 py-2.5 backdrop-blur-sm">
               {/* Animated shimmer */}
               <div
-                className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-blue-500/5 to-transparent"
+                className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-violet-500/5 to-transparent"
                 style={{ animation: "shimmer 2s infinite" }}
               />
-              <Loader2 className="relative h-3.5 w-3.5 animate-spin text-blue-500 shrink-0" />
-              <FileCode className="relative h-3.5 w-3.5 text-blue-400 shrink-0" />
-              <span className="relative text-xs font-medium text-blue-600 dark:text-blue-400">
+              <Loader2 className="relative h-3.5 w-3.5 animate-spin text-violet-400 shrink-0" />
+              <FileCode className="relative h-3.5 w-3.5 text-violet-300 shrink-0" />
+              <span className="relative text-xs font-medium text-violet-300">
                 Writing
               </span>
-              <span className="relative truncate font-mono text-xs text-blue-500/80">
+              <span className="relative truncate font-mono text-xs text-violet-400/80">
                 {currentStreamingFile}
               </span>
             </div>

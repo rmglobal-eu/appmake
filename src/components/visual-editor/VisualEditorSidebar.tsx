@@ -7,7 +7,7 @@ import {
   useBuilderStore,
   type SelectedElement,
 } from "@/lib/stores/builder-store";
-import { useLivePreviewBridge } from "@/components/preview/LivePreview";
+import { useVisualEditorSync } from "@/hooks/useVisualEditorSync";
 import {
   Type,
   Palette,
@@ -20,7 +20,7 @@ import {
 
 export function VisualEditorSidebar() {
   const { selectedElement } = useBuilderStore();
-  const sendToPreview = useLivePreviewBridge();
+  const syncAndApply = useVisualEditorSync();
 
   if (!selectedElement) {
     return (
@@ -55,10 +55,10 @@ export function VisualEditorSidebar() {
 
       {/* Panels */}
       <div className="flex-1 overflow-y-auto">
-        <TextPanel element={selectedElement} onApply={sendToPreview} />
-        <ColorsPanel element={selectedElement} onApply={sendToPreview} />
-        <SpacingPanel element={selectedElement} onApply={sendToPreview} />
-        <TypographyPanel element={selectedElement} onApply={sendToPreview} />
+        <TextPanel element={selectedElement} onApply={syncAndApply} />
+        <ColorsPanel element={selectedElement} onApply={syncAndApply} />
+        <SpacingPanel element={selectedElement} onApply={syncAndApply} />
+        <TypographyPanel element={selectedElement} onApply={syncAndApply} />
       </div>
     </div>
   );

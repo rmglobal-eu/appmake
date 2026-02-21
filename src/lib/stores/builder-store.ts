@@ -2,6 +2,7 @@ import { create } from "zustand";
 
 export type ViewMode = "preview" | "code" | "visual-editor";
 export type DeviceViewport = "desktop" | "tablet" | "mobile";
+export type PreviewMode = "quick" | "sandbox";
 
 export interface SelectedElement {
   tagName: string;
@@ -9,6 +10,12 @@ export interface SelectedElement {
   text: string;
   styles: Record<string, string>;
   rect: { x: number; y: number; width: number; height: number };
+  className: string;
+  parentTagName: string;
+  siblingIndex: number;
+  attributes: Record<string, string>;
+  outerHtmlSnippet: string;
+  inlineStyle: string;
 }
 
 interface BuilderStore {
@@ -21,6 +28,9 @@ interface BuilderStore {
   urlPath: string;
   versionHistoryOpen: boolean;
   consoleVisible: boolean;
+  terminalVisible: boolean;
+  previewMode: PreviewMode;
+  visualEditPending: boolean;
 
   setViewMode: (mode: ViewMode) => void;
   setDeviceViewport: (viewport: DeviceViewport) => void;
@@ -31,6 +41,9 @@ interface BuilderStore {
   setUrlPath: (path: string) => void;
   setVersionHistoryOpen: (open: boolean) => void;
   setConsoleVisible: (visible: boolean) => void;
+  toggleTerminal: () => void;
+  setPreviewMode: (mode: PreviewMode) => void;
+  setVisualEditPending: (pending: boolean) => void;
 }
 
 export const useBuilderStore = create<BuilderStore>((set) => ({
@@ -43,6 +56,9 @@ export const useBuilderStore = create<BuilderStore>((set) => ({
   urlPath: "/",
   versionHistoryOpen: false,
   consoleVisible: false,
+  terminalVisible: false,
+  previewMode: "quick",
+  visualEditPending: false,
 
   setViewMode: (viewMode) => set({ viewMode }),
   setDeviceViewport: (deviceViewport) => set({ deviceViewport }),
@@ -58,4 +74,7 @@ export const useBuilderStore = create<BuilderStore>((set) => ({
   setUrlPath: (urlPath) => set({ urlPath }),
   setVersionHistoryOpen: (versionHistoryOpen) => set({ versionHistoryOpen }),
   setConsoleVisible: (consoleVisible) => set({ consoleVisible }),
+  toggleTerminal: () => set((state) => ({ terminalVisible: !state.terminalVisible })),
+  setPreviewMode: (previewMode) => set({ previewMode }),
+  setVisualEditPending: (visualEditPending) => set({ visualEditPending }),
 }));
