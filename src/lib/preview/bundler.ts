@@ -131,8 +131,10 @@ function detectEntryPoint(files: Record<string, string>): EntryInfo | null {
   for (const candidate of BOOTSTRAP_FILES) {
     if (candidate in files) {
       const content = files[candidate];
-      // Verify it actually has mounting logic
-      if (content.includes("createRoot") || content.includes("render") || content.includes("ReactDOM")) {
+      // Verify it actually has mounting logic AND looks like valid code
+      const trimmed = content.trimStart();
+      const looksLikeCode = /^[a-zA-Z"'`/]/.test(trimmed[0] || "");
+      if (looksLikeCode && (content.includes("createRoot") || content.includes("render") || content.includes("ReactDOM"))) {
         return { file: candidate, isSelfMounting: true };
       }
     }
@@ -203,9 +205,19 @@ function isBundleable(key: string, content: string): boolean {
   const hasBundleableExt = BUNDLEABLE_EXT.some((ext) => key.endsWith(ext));
   if (!hasBundleableExt) return false;
 
-  // Skip files whose content looks like non-code (HTML documents, etc.)
+  // Skip files whose content looks like non-code
   const trimmed = content.trimStart();
-  if (trimmed.startsWith("<!") || trimmed.startsWith("<html")) return false;
+  if (trimmed.length === 0) return false;
+  if (trimmed.startsWith("<!") || trimmed.startsWith("<html") || trimmed.startsWith("<head")) return false;
+
+  // For code files (.ts/.tsx/.js/.jsx), validate the first character is plausible JS/TS
+  const codeExts = [".tsx", ".ts", ".jsx", ".js"];
+  if (codeExts.some((ext) => key.endsWith(ext))) {
+    const firstChar = trimmed[0];
+    // Valid JS/TS starts: letters, quotes, /, (, [, {, #, _, $, backtick
+    const validStarts = /^[a-zA-Z"'`/\(\[\{#_$@]/;
+    if (!validStarts.test(firstChar)) return false;
+  }
 
   return true;
 }
