@@ -105,7 +105,7 @@ export function UpdateCard({ card, title, actions, previousFiles }: UpdateCardPr
   const cardTitle = card?.title ?? title ?? "Update";
   const isStreaming = card?.status === "streaming";
 
-  const subtasks: { id: string; label: string; type: string; status: string; filePath?: string }[] = useMemo(() => {
+  const rawSubtasks: { id: string; label: string; type: string; status: string; filePath?: string }[] = useMemo(() => {
     if (card) return card.subtasks;
     if (actions) {
       return actions.map((a, i) => ({
@@ -113,11 +113,31 @@ export function UpdateCard({ card, title, actions, previousFiles }: UpdateCardPr
         label: a.action.type === "file" ? a.action.filePath : a.action.type === "search-replace" ? a.action.filePath : a.action.type === "shell" ? a.action.command : a.action.command,
         type: a.action.type,
         status: a.status === "completed" ? "completed" : "streaming",
-        filePath: a.action.type === "file" ? a.action.filePath : undefined,
+        filePath: a.action.type === "file" ? a.action.filePath : a.action.type === "search-replace" ? a.action.filePath : undefined,
       }));
     }
     return [];
   }, [card, actions]);
+
+  // Group file/search-replace subtasks by path, keep shell/start separate
+  const subtasks = useMemo(() => {
+    const grouped: { id: string; label: string; type: string; status: string; filePath?: string; changeCount: number }[] = [];
+    const seen = new Map<string, number>();
+
+    for (const s of rawSubtasks) {
+      const key = (s.type === "file" || s.type === "search-replace") ? (s.filePath ?? s.label) : null;
+      if (key && seen.has(key)) {
+        const idx = seen.get(key)!;
+        grouped[idx].changeCount++;
+        // If any is still streaming, keep it streaming
+        if (s.status === "streaming") grouped[idx].status = "streaming";
+      } else {
+        if (key) seen.set(key, grouped.length);
+        grouped.push({ ...s, changeCount: 1 });
+      }
+    }
+    return grouped;
+  }, [rawSubtasks]);
 
   const filesCreated = card?.filesCreated ?? 0;
   const filesModified = card?.filesModified ?? 0;
@@ -158,9 +178,12 @@ export function UpdateCard({ card, title, actions, previousFiles }: UpdateCardPr
       newContent: string;
     }[] = [];
 
-    for (const subtask of subtasks) {
-      if (subtask.type !== "file") continue;
+    const seenPaths = new Set<string>();
+    for (const subtask of rawSubtasks) {
+      if (subtask.type !== "file" && subtask.type !== "search-replace") continue;
       const path = subtask.filePath ?? subtask.label;
+      if (seenPaths.has(path)) continue;
+      seenPaths.add(path);
       const newContent = generatedFiles[path] ?? "";
       const oldContent = prevFiles[path];
 
@@ -174,7 +197,7 @@ export function UpdateCard({ card, title, actions, previousFiles }: UpdateCardPr
       }
     }
     return diffs;
-  }, [detailsOpen, subtasks, generatedFiles, prevFiles]);
+  }, [detailsOpen, rawSubtasks, generatedFiles, prevFiles]);
 
   return (
     <div
@@ -259,6 +282,11 @@ export function UpdateCard({ card, title, actions, previousFiles }: UpdateCardPr
               <span className="truncate font-mono text-[11px] text-white/60">
                 {subtask.label}
               </span>
+              {subtask.changeCount > 1 && (
+                <span className="shrink-0 text-[9px] font-medium text-white/30">
+                  {subtask.changeCount} changes
+                </span>
+              )}
               {subtask.status === "streaming" && (
                 <span className="ml-auto shrink-0 text-[9px] font-medium text-violet-400">
                   writing...
