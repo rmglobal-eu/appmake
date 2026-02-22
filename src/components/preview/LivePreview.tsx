@@ -39,18 +39,17 @@ export function LivePreview({
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const blobUrlRef = useRef<string | null>(null);
 
-  // Track whether we've had a first build in this streaming session
+  // Track whether we've ever had a successful build (never reset — keep old preview visible)
   const [hadFirstBuild, setHadFirstBuild] = useState(false);
+  // Track runtime errors from iframe (separate from build errors)
+  const [hasRuntimeError, setHasRuntimeError] = useState(false);
 
-  // Reset hadFirstBuild when a new streaming session starts
-  const prevStreamingRef = useRef(false);
+  // Clear runtime errors when a new build starts
   useEffect(() => {
-    if (isStreaming && !prevStreamingRef.current) {
-      // Streaming just started — reset
-      setHadFirstBuild(false);
+    if (esbuild.status === "bundling") {
+      setHasRuntimeError(false);
     }
-    prevStreamingRef.current = isStreaming;
-  }, [isStreaming]);
+  }, [esbuild.status]);
 
   // Determine which mode we're using
   const useEsbuild = forceEsbuild || !wc.supported;
@@ -114,6 +113,7 @@ export function LivePreview({
       switch (data.type) {
         case "preview-error":
           if (data.error) {
+            setHasRuntimeError(true);
             setStoreErrors([
               {
                 text: data.error.message || "Unknown error",
@@ -183,9 +183,9 @@ export function LivePreview({
         />
       )}
 
-      {/* Error overlay — only show when NOT streaming */}
+      {/* Error overlay — show for build errors AND runtime errors (not during streaming) */}
       {!isStreaming &&
-        effectiveStatus === "error" &&
+        (effectiveStatus === "error" || hasRuntimeError) &&
         errors.length > 0 && (
           <PreviewErrorOverlay errors={errors} onRetry={rebuild} />
         )}

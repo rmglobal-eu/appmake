@@ -115,5 +115,20 @@ export function usePreviewBundler(): UsePreviewBundlerResult {
     };
   }, [generatedFiles, doBuild]);
 
+  // Final guaranteed rebuild when streaming ends — ensures all files are bundled
+  const isStreaming = useChatStore((s) => s.isStreaming);
+  const prevStreamingRef = useRef(false);
+  useEffect(() => {
+    if (prevStreamingRef.current && !isStreaming) {
+      // Streaming just ended — cancel any pending debounce and do immediate final build
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+        debounceRef.current = null;
+      }
+      doBuild();
+    }
+    prevStreamingRef.current = isStreaming;
+  }, [isStreaming, doBuild]);
+
   return { html, status, errors, rebuild: doBuild };
 }

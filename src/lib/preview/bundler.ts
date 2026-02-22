@@ -290,15 +290,39 @@ export async function bundle(
     // main.tsx/index.tsx already has createRoot — use it directly
     entryPoint = entryInfo.file;
   } else {
-    // App.tsx needs a synthetic wrapper to mount it
+    // App.tsx needs a synthetic wrapper to mount it — includes Error Boundary
     const ENTRY_KEY = "__entry__.tsx";
     allFiles[ENTRY_KEY] = `
 import { createRoot } from "react-dom/client";
+import { Component } from "react";
 import * as _M from "./${entryInfo.file}";
 
 const App = _M.default || _M.App || _M.Main || Object.values(_M).find(v => typeof v === "function") || (() => null);
 
-createRoot(document.getElementById("root")).render(<App />);
+class EB extends Component {
+  constructor(props) { super(props); this.state = { error: null, info: null }; }
+  static getDerivedStateFromError(error) { return { error }; }
+  componentDidCatch(error, info) {
+    window.parent.postMessage({
+      type: "preview-error",
+      error: { message: error.message, stack: error.stack }
+    }, "*");
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{padding:"24px",color:"#ff6b6b",fontFamily:"ui-monospace,monospace",fontSize:"13px",background:"#1a1a2e",minHeight:"100vh",overflow:"auto"}}>
+          <div style={{marginBottom:"16px",fontSize:"15px",fontWeight:600,color:"#ff8a8a"}}>Runtime Error</div>
+          <pre style={{whiteSpace:"pre-wrap",wordBreak:"break-word",margin:0,lineHeight:1.6,color:"#ff6b6b"}}>{this.state.error.message}</pre>
+          <pre style={{whiteSpace:"pre-wrap",wordBreak:"break-word",margin:"12px 0 0",lineHeight:1.4,color:"#666",fontSize:"11px"}}>{this.state.error.stack}</pre>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+createRoot(document.getElementById("root")).render(<EB><App /></EB>);
 `;
     entryPoint = ENTRY_KEY;
   }
