@@ -78,7 +78,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Project tabs in dark container */}
-            <div className="relative z-10 w-full px-10 pb-10">
+            <div className="relative z-10 w-full px-10 pb-10 -mt-6">
               <div className="rounded-2xl bg-[#1a1a1e] p-5 shadow-2xl">
                 <ProjectTabs projects={projects} userName={session.user?.name || firstName} />
               </div>
