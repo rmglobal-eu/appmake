@@ -6,13 +6,13 @@ import {
   projectFiles,
   fileSnapshots,
 } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { streamChat } from "@/lib/llm/stream-chat";
 import { logUsage } from "@/lib/llm/cost-tracker";
 import { MessageParser } from "@/lib/parser/message-parser";
 import type { ModelProvider } from "@/types/chat";
 import type { ModelMessage } from "ai";
-import type { Intent } from "@/lib/llm/intent-classifier";
+import type { DesignScheme } from "@/types/design-scheme";
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -32,7 +32,6 @@ interface GenerationState {
   provider: ModelProvider;
   inputMessages: ModelMessage[];
   lastUserMessage: ModelMessage | undefined;
-  intent: Intent;
 }
 
 interface StartGenerationParams {
@@ -43,9 +42,8 @@ interface StartGenerationParams {
   modelId: string;
   provider: ModelProvider;
   projectContext?: string;
-  planMode?: boolean;
-  intent: Intent;
   lastUserMessage: ModelMessage | undefined;
+  designScheme?: DesignScheme | null;
 }
 
 // ─── In-memory store ────────────────────────────────────────────────
@@ -66,9 +64,8 @@ export async function startGeneration(params: StartGenerationParams): Promise<st
     modelId,
     provider,
     projectContext,
-    planMode,
-    intent,
     lastUserMessage,
+    designScheme,
   } = params;
 
   // 1. Insert DB row
@@ -105,7 +102,6 @@ export async function startGeneration(params: StartGenerationParams): Promise<st
     provider,
     inputMessages: messages,
     lastUserMessage,
-    intent,
   };
 
   activeGenerations.set(generationId, state);
@@ -116,8 +112,7 @@ export async function startGeneration(params: StartGenerationParams): Promise<st
     modelId,
     provider,
     projectContext,
-    planMode,
-    intent,
+    designScheme,
   }).catch((err) => {
     console.error(`[generation-manager] Unhandled error in generation ${generationId}:`, err);
   });
@@ -226,8 +221,7 @@ async function runGeneration(
     modelId: string;
     provider: ModelProvider;
     projectContext?: string;
-    planMode?: boolean;
-    intent: Intent;
+    designScheme?: DesignScheme | null;
   }
 ) {
   try {
@@ -236,8 +230,7 @@ async function runGeneration(
       modelId: opts.modelId,
       provider: opts.provider,
       projectContext: opts.projectContext,
-      planMode: opts.planMode,
-      intent: opts.intent,
+      designScheme: opts.designScheme,
       abortSignal: state.abortController.signal,
     });
 
@@ -369,7 +362,6 @@ async function finalizeGeneration(state: GenerationState) {
     model: state.modelId,
     inputTokens: estimatedInputTokens,
     outputTokens: estimatedOutputTokens,
-    intent: state.intent,
   }).catch(() => {});
 
   // 4. Extract and save files server-side
@@ -429,8 +421,6 @@ function extractFilesFromContent(content: string): Record<string, string> {
       if (action.type === "file" && action.filePath && action.content) {
         files[action.filePath] = action.content;
       }
-      // Note: search-replace requires existing file state which the server doesn't
-      // track during generation. The client-side parser handles this.
     },
   });
 

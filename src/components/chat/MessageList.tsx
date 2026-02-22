@@ -190,6 +190,7 @@ export function MessageList({
               onSuggestionsFound={
                 i === messages.length - 1 ? handleSuggestionsFound : undefined
               }
+              onInterviewSubmit={onSendMessage}
             />
           )
         )}
@@ -231,6 +232,7 @@ export function MessageList({
             onPlanReject={onPlanReject}
             resolvedPlans={resolvedPlans}
             liveCard={liveCard}
+            onInterviewSubmit={onSendMessage}
           />
         )}
 

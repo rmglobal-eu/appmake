@@ -13,7 +13,6 @@ import { MessageParser } from "@/lib/parser/message-parser";
 import type { ChatMessage } from "@/types/chat";
 import type { UpdateCard } from "@/types/update-card";
 import type { UploadedImage } from "./ChatInput";
-import { useBuilderStore } from "@/lib/stores/builder-store";
 import { buildSmartContext } from "@/lib/llm/context-builder";
 import { summarizeConversation } from "@/lib/llm/conversation-summarizer";
 import { v4 as uuid } from "uuid";
@@ -74,7 +73,6 @@ export function ChatPanel({ chatId, projectId, initialMessages = [] }: ChatPanel
   const [resolvedPlans, setResolvedPlans] = useState<Record<string, "approved" | "rejected">>({});
   const [liveCard, setLiveCard] = useState<UpdateCard | undefined>(undefined);
   const [usageRefreshKey, setUsageRefreshKey] = useState(0);
-  const { planMode } = useBuilderStore();
   const streamingParserRef = useRef<MessageParser | null>(null);
   const subtaskCounterRef = useRef(0);
   const activeGenerationIdRef = useRef<string | null>(null);
@@ -314,7 +312,6 @@ export function ChatPanel({ chatId, projectId, initialMessages = [] }: ChatPanel
             projectId,
             modelId: selectedModel.id,
             provider: selectedModel.provider,
-            planMode,
             projectContext,
           }),
         });
@@ -352,7 +349,7 @@ export function ChatPanel({ chatId, projectId, initialMessages = [] }: ChatPanel
         setUsageRefreshKey((k) => k + 1);
       }
     },
-    [chatId, projectId, messages, selectedModel, planMode, addMessage, setIsStreaming, connectToGeneration]
+    [chatId, projectId, messages, selectedModel, addMessage, setIsStreaming, connectToGeneration]
   );
 
   // ── Stop / Cancel ──────────────────────────────────────────────────

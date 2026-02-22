@@ -8,6 +8,18 @@ export interface ToolActivity {
   result?: string;
 }
 
+export interface InterviewQuestion {
+  id: string;
+  type: "choice" | "text";
+  text: string;
+  options?: Array<{ value: string; label: string }>;
+}
+
+export interface InterviewData {
+  title: string;
+  questions: InterviewQuestion[];
+}
+
 export interface ParserCallbacks {
   onText?: (text: string) => void;
   onArtifactOpen?: (artifact: { id: string; title: string }) => void;
@@ -20,6 +32,7 @@ export interface ParserCallbacks {
   onPlanClose?: () => void;
   onSuggestionsClose?: (suggestions: string[]) => void;
   onToolActivity?: (activity: ToolActivity) => void;
+  onInterviewClose?: (interview: InterviewData) => void;
 }
 
 export type ParserState =

@@ -1,16 +1,21 @@
 import type { Action } from "@/types/actions";
-import type { ParserCallbacks } from "./types";
+import type { ParserCallbacks, InterviewData, InterviewQuestion } from "./types";
 
 /**
  * Streaming XML parser for LLM responses.
- * Parses <artifact> and <action> tags from incomplete streaming chunks.
- *
- * State machine:
- *   text -> opening_tag -> artifact_body -> action_body -> ...
+ * Parses <artifact>, <action>, <plan>, <suggestions>, and <interview> tags
+ * from incomplete streaming chunks.
  */
 export class MessageParser {
   private buffer = "";
-  private state: "text" | "tag" | "artifact" | "action" | "plan" | "suggestions" = "text";
+  private state:
+    | "text"
+    | "tag"
+    | "artifact"
+    | "action"
+    | "plan"
+    | "suggestions"
+    | "interview" = "text";
   private currentArtifactId = "";
   private currentArtifactTitle = "";
   private currentActionType = "";
@@ -18,6 +23,8 @@ export class MessageParser {
   private actionContent = "";
   private planContent = "";
   private suggestionsContent = "";
+  private interviewContent = "";
+  private interviewTitle = "";
   private callbacks: ParserCallbacks;
   private textBuffer = "";
 
@@ -59,6 +66,9 @@ export class MessageParser {
           break;
         case "suggestions":
           if (!this.processSuggestions()) return;
+          break;
+        case "interview":
+          if (!this.processInterview()) return;
           break;
       }
     }
@@ -185,6 +195,29 @@ export class MessageParser {
       this.buffer = this.buffer.slice("</plan>".length);
       this.callbacks.onPlanClose?.();
       this.planContent = "";
+      this.state = "text";
+      return true;
+    }
+
+    // Check for <interview
+    const interviewMatch = this.buffer.match(
+      /^<interview\s+title="([^"]*?)"\s*>/
+    );
+    if (interviewMatch) {
+      this.interviewTitle = interviewMatch[1];
+      this.interviewContent = "";
+      this.buffer = this.buffer.slice(interviewMatch[0].length);
+      this.state = "interview";
+      return true;
+    }
+
+    // Check for </interview>
+    if (this.buffer.startsWith("</interview>")) {
+      this.buffer = this.buffer.slice("</interview>".length);
+      const interview = this.parseInterviewContent();
+      this.callbacks.onInterviewClose?.(interview);
+      this.interviewContent = "";
+      this.interviewTitle = "";
       this.state = "text";
       return true;
     }
@@ -331,6 +364,66 @@ export class MessageParser {
     this.buffer = this.buffer.slice(closingTagIndex);
     this.state = "tag";
     return true;
+  }
+
+  private processInterview(): boolean {
+    const closingTagIndex = this.buffer.indexOf("</interview>");
+    if (closingTagIndex === -1) {
+      this.interviewContent += this.buffer;
+      this.buffer = "";
+      return false;
+    }
+
+    const content = this.buffer.slice(0, closingTagIndex);
+    this.interviewContent += content;
+    this.buffer = this.buffer.slice(closingTagIndex);
+    this.state = "tag";
+    return true;
+  }
+
+  /**
+   * Parse the accumulated interview XML content into structured data.
+   * Handles: <question id="..." type="choice|text">text<option>...</option></question>
+   */
+  private parseInterviewContent(): InterviewData {
+    const questions: InterviewQuestion[] = [];
+    const content = this.interviewContent;
+
+    // Match each <question> block
+    const questionRegex =
+      /<question\s+id="([^"]*?)"\s+type="([^"]*?)"\s*>([\s\S]*?)<\/question>/g;
+    let qMatch;
+
+    while ((qMatch = questionRegex.exec(content)) !== null) {
+      const id = qMatch[1];
+      const type = qMatch[2] as "choice" | "text";
+      const body = qMatch[3];
+
+      // Extract options if choice type
+      const options: Array<{ value: string; label: string }> = [];
+      if (type === "choice") {
+        const optionRegex = /<option\s+value="([^"]*?)">([\s\S]*?)<\/option>/g;
+        let oMatch;
+        while ((oMatch = optionRegex.exec(body)) !== null) {
+          options.push({ value: oMatch[1], label: oMatch[2].trim() });
+        }
+      }
+
+      // Extract question text (everything before the first <option> tag, trimmed)
+      const textPart = body.replace(/<option[\s\S]*?<\/option>/g, "").trim();
+
+      questions.push({
+        id,
+        type,
+        text: textPart,
+        options: options.length > 0 ? options : undefined,
+      });
+    }
+
+    return {
+      title: this.interviewTitle,
+      questions,
+    };
   }
 
   private buildAction(): Action {

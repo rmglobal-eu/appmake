@@ -4,9 +4,9 @@ import { db } from "@/lib/db";
 import { messages as messagesTable, users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import type { ModelProvider } from "@/types/chat";
-import { classifyIntent } from "@/lib/llm/intent-classifier";
 import { trackEvent } from "@/lib/analytics/collector";
 import { startGeneration } from "@/lib/generation/generation-manager";
+import { generateDesignScheme } from "@/lib/llm/design-scheme";
 
 const DEFAULT_DAILY_LIMIT = 20;
 
@@ -26,7 +26,6 @@ export async function POST(req: Request) {
     modelId = "gpt-4o",
     provider = "openai",
     projectContext,
-    planMode = false,
   } = body as {
     messages: ModelMessage[];
     chatId: string;
@@ -34,7 +33,6 @@ export async function POST(req: Request) {
     modelId: string;
     provider: ModelProvider;
     projectContext?: string;
-    planMode?: boolean;
   };
 
   // ── Usage limit check ──────────────────────────────────────────────
@@ -94,23 +92,24 @@ export async function POST(req: Request) {
     });
   }
 
-  // ── Intent classification ────────────────────────────────────────────
-  const lastContent = typeof lastUserMessage.content === "string"
-    ? lastUserMessage.content
-    : JSON.stringify(lastUserMessage.content);
-  const classified = classifyIntent(lastContent);
-
   // Track analytics event (best-effort)
   trackEvent({
     userId: userId,
     eventType: "chat_message",
     metadata: {
-      intent: classified.intent,
-      complexity: classified.complexity,
       model: modelId,
       provider,
     },
   }).catch(() => {});
+
+  // ── Generate DesignScheme for new sessions ─────────────────────────
+  const lastContent = typeof lastUserMessage.content === "string"
+    ? lastUserMessage.content
+    : JSON.stringify(lastUserMessage.content);
+
+  // Generate design scheme on first message (no existing project context = new project)
+  const isFirstMessage = messages.length <= 1;
+  const designScheme = isFirstMessage ? generateDesignScheme(lastContent) : null;
 
   // ── Start background generation ─────────────────────────────────────
   const generationId = await startGeneration({
@@ -121,9 +120,8 @@ export async function POST(req: Request) {
     modelId,
     provider,
     projectContext,
-    planMode,
-    intent: classified.intent,
     lastUserMessage,
+    designScheme,
   });
 
   return Response.json({ generationId });

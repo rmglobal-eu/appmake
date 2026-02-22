@@ -4,10 +4,11 @@ import { useMemo, useEffect } from "react";
 import Markdown from "react-markdown";
 import { UpdateCard } from "./UpdateCard";
 import { PlanCard } from "./PlanCard";
+import { InterviewCard } from "./InterviewCard";
 import { MessageParser } from "@/lib/parser/message-parser";
 import type { Action } from "@/types/actions";
 import type { UpdateCard as UpdateCardType } from "@/types/update-card";
-import type { ToolActivity } from "@/lib/parser/types";
+import type { ToolActivity, InterviewData } from "@/lib/parser/types";
 import {
   Globe,
   ExternalLink,
@@ -24,6 +25,7 @@ interface AssistantMessageProps {
   resolvedPlans?: Record<string, "approved" | "rejected">;
   liveCard?: UpdateCardType;
   onSuggestionsFound?: (suggestions: string[]) => void;
+  onInterviewSubmit?: (answers: string) => void;
 }
 
 interface ParsedPlan {
@@ -43,6 +45,7 @@ interface ParsedContent {
     actions: Action[];
   }[];
   plans: ParsedPlan[];
+  interviews: InterviewData[];
   suggestions: string[];
   blocks: ContentBlock[];
 }
@@ -80,6 +83,7 @@ function parseContent(content: string): ParsedContent {
   const textParts: string[] = [];
   const artifacts: { id: string; title: string; actions: Action[] }[] = [];
   const plans: ParsedPlan[] = [];
+  const interviews: InterviewData[] = [];
   const blocks: ContentBlock[] = [];
   let suggestions: string[] = [];
   let currentText = "";
@@ -135,6 +139,10 @@ function parseContent(content: string): ParsedContent {
       flushText();
       blocks.push({ type: "tool", activity });
     },
+    onInterviewClose: (interview) => {
+      flushText();
+      interviews.push(interview);
+    },
   });
 
   parser.push(content);
@@ -149,7 +157,7 @@ function parseContent(content: string): ParsedContent {
     blocks.push({ type: "text", content: currentText });
   }
 
-  return { textParts, artifacts, plans, suggestions, blocks };
+  return { textParts, artifacts, plans, interviews, suggestions, blocks };
 }
 
 export function AssistantMessage({
@@ -160,6 +168,7 @@ export function AssistantMessage({
   resolvedPlans,
   liveCard,
   onSuggestionsFound,
+  onInterviewSubmit,
 }: AssistantMessageProps) {
   const parsed = useMemo(() => parseContent(content), [content]);
 
@@ -226,6 +235,14 @@ export function AssistantMessage({
             onApprove={() => onPlanApprove?.(plan.title)}
             onReject={() => onPlanReject?.(plan.title)}
             resolved={resolvedPlans?.[plan.title]}
+          />
+        ))}
+
+        {parsed.interviews.map((interview, i) => (
+          <InterviewCard
+            key={`interview-${i}`}
+            interview={interview}
+            onSubmit={(answers) => onInterviewSubmit?.(answers)}
           />
         ))}
 

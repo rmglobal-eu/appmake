@@ -26,7 +26,6 @@ export interface UsageLogEntry {
   model: string;
   inputTokens: number;
   outputTokens: number;
-  intent: string;
   projectId?: string;
 }
 
@@ -39,7 +38,6 @@ export async function logUsage(entry: UsageLogEntry): Promise<void> {
       model: entry.model,
       inputTokens: entry.inputTokens,
       outputTokens: entry.outputTokens,
-      intent: entry.intent,
       cost: cost.toFixed(6),
       projectId: entry.projectId ?? null,
     });
