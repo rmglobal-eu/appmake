@@ -13,7 +13,15 @@ const PLACEHOLDERS = [
   "Build an e-commerce store with payments...",
 ];
 
-export function DashboardChatInput() {
+interface DashboardChatInputProps {
+  externalPrompt?: string | null;
+  onPromptConsumed?: () => void;
+}
+
+export function DashboardChatInput({
+  externalPrompt,
+  onPromptConsumed,
+}: DashboardChatInputProps) {
   const router = useRouter();
   const [value, setValue] = useState("");
   const [loading, setLoading] = useState(false);
@@ -41,31 +49,44 @@ export function DashboardChatInput() {
     el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
   }, [value]);
 
-  const handleSubmit = useCallback(async () => {
-    const prompt = value.trim();
-    if (!prompt || loading) return;
+  const handleSubmit = useCallback(
+    async (overridePrompt?: string) => {
+      const prompt = (overridePrompt ?? value).trim();
+      if (!prompt || loading) return;
 
-    setLoading(true);
-    try {
-      const name = prompt.length > 40 ? prompt.slice(0, 40) + "..." : prompt;
-      const res = await fetch("/api/projects", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, template: "node" }),
-      });
+      setLoading(true);
+      try {
+        const name =
+          prompt.length > 40 ? prompt.slice(0, 40) + "..." : prompt;
+        const res = await fetch("/api/projects", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, template: "node" }),
+        });
 
-      if (!res.ok) throw new Error("Failed to create project");
-      const data = await res.json();
-      const projectId = data.project.id;
+        if (!res.ok) throw new Error("Failed to create project");
+        const data = await res.json();
+        const projectId = data.project.id;
 
-      // Store prompt for auto-send after redirect
-      sessionStorage.setItem(`appmake_initial_prompt_${projectId}`, prompt);
-      router.push(`/chat/${projectId}`);
-    } catch {
-      toast.error("Failed to create project");
-      setLoading(false);
+        // Store prompt for auto-send after redirect
+        sessionStorage.setItem(`appmake_initial_prompt_${projectId}`, prompt);
+        router.push(`/chat/${projectId}`);
+      } catch {
+        toast.error("Failed to create project");
+        setLoading(false);
+      }
+    },
+    [value, loading, router]
+  );
+
+  // Handle external prompt from IdeaCards
+  useEffect(() => {
+    if (externalPrompt) {
+      setValue(externalPrompt);
+      handleSubmit(externalPrompt);
+      onPromptConsumed?.();
     }
-  }, [value, loading, router]);
+  }, [externalPrompt]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -129,7 +150,7 @@ export function DashboardChatInput() {
             </button>
 
             <button
-              onClick={handleSubmit}
+              onClick={() => handleSubmit()}
               disabled={!value.trim() || loading}
               className="flex h-9 w-9 items-center justify-center rounded-full bg-[#555] text-white transition-all hover:bg-[#666] disabled:bg-[#333] disabled:text-white/30"
             >

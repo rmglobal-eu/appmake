@@ -7,6 +7,7 @@ import { Menu } from "lucide-react";
 import { MeshGradientBackground } from "@/components/dashboard/MeshGradientBackground";
 import { TypingHeading } from "@/components/dashboard/TypingHeading";
 import { DashboardChatInput } from "@/components/dashboard/DashboardChatInput";
+import { IdeaCards } from "@/components/dashboard/IdeaCards";
 import { ProjectTabs } from "@/components/dashboard/ProjectTabs";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 
@@ -21,6 +22,7 @@ export default function DashboardPage() {
   const { data: session } = useSession();
   const [projects, setProjects] = useState<Project[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [selectedIdea, setSelectedIdea] = useState<string | null>(null);
 
   useEffect(() => {
     if (session?.user) {
@@ -68,7 +70,11 @@ export default function DashboardPage() {
             {/* Hero area */}
             <div className="flex min-h-[calc(100vh-80px)] flex-col items-center justify-center gap-8 px-4">
               <TypingHeading name={firstName} />
-              <DashboardChatInput />
+              <DashboardChatInput
+                externalPrompt={selectedIdea}
+                onPromptConsumed={() => setSelectedIdea(null)}
+              />
+              <IdeaCards onSelect={setSelectedIdea} />
             </div>
 
             {/* Project tabs in dark container */}
