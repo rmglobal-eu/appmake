@@ -3,6 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import {
   Menu,
@@ -49,28 +50,31 @@ function timeAgo(dateStr: string): string {
   return `${months} month${months > 1 ? "s" : ""} ago`;
 }
 
-const SORT_OPTIONS: { key: SortKey; label: string }[] = [
-  { key: "updatedAt", label: "Last edited" },
-  { key: "joinedAt", label: "Date joined" },
-  { key: "name", label: "Name" },
+const SORT_OPTIONS: { key: SortKey; labelKey: string; ns: "projects" | "shared" }[] = [
+  { key: "updatedAt", labelKey: "lastEdited", ns: "projects" },
+  { key: "joinedAt", labelKey: "dateJoined", ns: "shared" },
+  { key: "name", labelKey: "nameSort", ns: "projects" },
 ];
 
 function RoleBadge({ role }: { role: "editor" | "viewer" }) {
+  const t = useTranslations("shared");
   if (role === "editor") {
     return (
       <span className="rounded-full bg-violet-500/15 px-2 py-0.5 text-[10px] font-medium text-violet-400">
-        Editor
+        {t("editor")}
       </span>
     );
   }
   return (
     <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-medium text-white/40">
-      Viewer
+      {t("viewer")}
     </span>
   );
 }
 
 export default function SharedPage() {
+  const t = useTranslations("shared");
+  const tp = useTranslations("projects");
   const { data: session } = useSession();
   const router = useRouter();
   const [sharedProjects, setSharedProjects] = useState<SharedProject[]>([]);
@@ -96,7 +100,7 @@ export default function SharedPage() {
           setSharedProjects(shared ?? []);
           setSidebarProjects(all ?? []);
         })
-        .catch(() => toast.error("Failed to load projects"))
+        .catch(() => toast.error(tp("failedToLoadProjects")))
         .finally(() => setLoading(false));
     }
   }, [session]);
@@ -151,7 +155,7 @@ export default function SharedPage() {
           <div className="flex-1 overflow-y-auto px-6 py-8 md:px-10">
             {/* Header */}
             <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              <h1 className="text-2xl font-bold text-white">Shared with me</h1>
+              <h1 className="text-2xl font-bold text-white">{t("sharedWithMe")}</h1>
 
               {!isEmpty && (
                 <div className="flex flex-wrap items-center gap-3">
@@ -161,7 +165,7 @@ export default function SharedPage() {
                     <input
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
-                      placeholder="Search shared..."
+                      placeholder={t("searchShared")}
                       className="h-9 w-60 rounded-lg border border-white/10 bg-white/5 pl-9 pr-3 text-sm text-white placeholder-white/30 outline-none transition-colors focus:border-white/20 focus:bg-white/[0.08]"
                     />
                     {search && (
@@ -180,7 +184,7 @@ export default function SharedPage() {
                       onClick={() => setSortDropdownOpen(!sortDropdownOpen)}
                       className="flex h-9 items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white/70 transition-colors hover:bg-white/[0.08]"
                     >
-                      {SORT_OPTIONS.find((o) => o.key === sortKey)?.label}
+                      {(() => { const opt = SORT_OPTIONS.find((o) => o.key === sortKey); return opt ? (opt.ns === "shared" ? t(opt.labelKey) : tp(opt.labelKey)) : ""; })()}
                       <ChevronDown className="h-3.5 w-3.5 text-white/40" />
                     </button>
                     {sortDropdownOpen && (
@@ -208,16 +212,16 @@ export default function SharedPage() {
                               }}
                               className="flex w-full items-center justify-between px-3 py-2 text-sm text-white/70 transition-colors hover:bg-white/5"
                             >
-                              <span>{opt.label}</span>
+                              <span>{opt.ns === "shared" ? t(opt.labelKey) : tp(opt.labelKey)}</span>
                               {sortKey === opt.key && (
                                 <span className="text-xs text-white/40">
                                   {sortDir === "desc"
                                     ? opt.key === "name"
-                                      ? "Z-A"
-                                      : "Newest first"
+                                      ? tp("zA")
+                                      : tp("newestFirst")
                                     : opt.key === "name"
-                                      ? "A-Z"
-                                      : "Oldest first"}
+                                      ? tp("aZ")
+                                      : tp("oldestFirst")}
                                 </span>
                               )}
                             </button>
@@ -382,7 +386,7 @@ export default function SharedPage() {
                     animation: "fadeInUp 600ms ease-out 400ms both",
                   }}
                 >
-                  No shared projects yet
+                  {t("noSharedProjects")}
                 </h2>
                 <p
                   className="mt-2 max-w-sm text-center text-sm text-white/40"
@@ -390,8 +394,7 @@ export default function SharedPage() {
                     animation: "fadeInUp 600ms ease-out 500ms both",
                   }}
                 >
-                  When someone shares a project with you via a share link,
-                  it will appear here automatically.
+                  {t("noSharedDescription")}
                 </p>
                 <button
                   onClick={() => router.push("/discover")}
@@ -400,7 +403,7 @@ export default function SharedPage() {
                     animation: "fadeInUp 600ms ease-out 600ms both",
                   }}
                 >
-                  Discover projects
+                  {t("discoverProjects")}
                 </button>
               </div>
             ) : viewMode === "grid" ? (
@@ -446,7 +449,7 @@ export default function SharedPage() {
                           {project.name}
                         </p>
                         <p className="text-[11px] text-white/30">
-                          {project.ownerName || "Unknown"} &middot; Edited{" "}
+                          {project.ownerName || "Unknown"} &middot; {tp("edited")}{" "}
                           {timeAgo(project.updatedAt)}
                         </p>
                       </div>
@@ -464,16 +467,16 @@ export default function SharedPage() {
                         <span className="sr-only">Thumbnail</span>
                       </th>
                       <th className="px-3 py-3 text-left text-xs font-medium text-white/40">
-                        Name
+                        {tp("name")}
                       </th>
                       <th className="hidden px-3 py-3 text-left text-xs font-medium text-white/40 md:table-cell">
-                        Joined
+                        {t("joined")}
                       </th>
                       <th className="hidden px-3 py-3 text-left text-xs font-medium text-white/40 sm:table-cell">
-                        Owner
+                        {t("owner")}
                       </th>
                       <th className="w-20 px-3 py-3 text-left text-xs font-medium text-white/40">
-                        Role
+                        {t("role")}
                       </th>
                     </tr>
                   </thead>
@@ -500,7 +503,7 @@ export default function SharedPage() {
                             {project.name}
                           </p>
                           <p className="text-xs text-white/30">
-                            Edited {timeAgo(project.updatedAt)}
+                            {tp("edited")} {timeAgo(project.updatedAt)}
                           </p>
                         </td>
                         <td className="hidden px-3 py-3 text-sm text-white/40 md:table-cell">
@@ -536,7 +539,7 @@ export default function SharedPage() {
 
                 {filtered.length === 0 && sharedProjects.length > 0 && (
                   <div className="py-12 text-center text-sm text-white/30">
-                    No shared projects match &ldquo;{search}&rdquo;
+                    {tp("noProjectsMatch")} &ldquo;{search}&rdquo;
                   </div>
                 )}
               </div>
@@ -549,7 +552,7 @@ export default function SharedPage() {
               sharedProjects.length > 0 &&
               search && (
                 <div className="py-12 text-center text-sm text-white/30">
-                  No shared projects match &ldquo;{search}&rdquo;
+                  {tp("noProjectsMatch")} &ldquo;{search}&rdquo;
                 </div>
               )}
           </div>

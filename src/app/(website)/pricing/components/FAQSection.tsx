@@ -1,49 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { ChevronDown } from "lucide-react";
 
-const faqs = [
-  {
-    question: "What are the limits on the Free plan?",
-    answer:
-      "The Free plan includes 20 AI messages per day, up to 3 active projects, 1 GB of storage, and access to basic AI models. It's perfect for getting started and exploring the platform. There are no time limits — the Free plan is free forever.",
-  },
-  {
-    question: "How do I upgrade my plan?",
-    answer:
-      "You can upgrade at any time from your billing settings or by clicking the upgrade button in the app. When you upgrade, you'll immediately get access to all the features of your new plan. We'll prorate the charge for the remainder of your current billing period.",
-  },
-  {
-    question: "Can I cancel my subscription at any time?",
-    answer:
-      "Yes, you can cancel your subscription at any time. When you cancel, your plan will remain active until the end of your current billing period. After that, your account will revert to the Free plan. You won't lose any of your projects, but you may lose access to premium features.",
-  },
-  {
-    question: "How does the billing cycle work?",
-    answer:
-      "Billing cycles start on the day you subscribe. For monthly plans, you're billed on the same date each month. For annual plans, you're billed once per year. You'll receive an invoice via email for each payment. All prices are in USD.",
-  },
-  {
-    question: "How many team members can I add on the Team plan?",
-    answer:
-      "The Team plan supports up to 25 team members. Each member gets their own account with full access to shared projects. You can manage roles and permissions from the admin dashboard. Need more seats? Contact our sales team for a custom Enterprise plan.",
-  },
-  {
-    question: "Can I use my own API keys?",
-    answer:
-      "Currently, all AI requests go through our platform to ensure security, rate limiting, and usage tracking. We're exploring a bring-your-own-key option for Team and Enterprise plans. Join our waitlist to be notified when this feature launches.",
-  },
-  {
-    question: "Do you offer Enterprise plans?",
-    answer:
-      "Yes! For organizations that need more than what the Team plan offers, we provide custom Enterprise plans with unlimited seats, dedicated infrastructure, custom SLAs, SSO integration, on-premise deployment options, and a dedicated account manager. Contact our sales team to discuss your needs.",
-  },
-  {
-    question: "Is there a student or education discount?",
-    answer:
-      "Yes, we offer a 50% discount on the Pro plan for verified students and educators. You'll need to verify your status through our education verification partner. The discount applies for the duration of your enrollment or teaching position. Apply through your account settings.",
-  },
+const faqKeys = [
+  { questionKey: "faqLimitsTitle", answerKey: "faqLimitsAnswer" },
+  { questionKey: "faqUpgradeTitle", answerKey: "faqUpgradeAnswer" },
+  { questionKey: "faqCancelTitle", answerKey: "faqCancelAnswer" },
+  { questionKey: "faqBillingTitle", answerKey: "faqBillingAnswer" },
+  { questionKey: "faqTeamTitle", answerKey: "faqTeamAnswer" },
+  { questionKey: "faqApiTitle", answerKey: "faqApiAnswer" },
+  { questionKey: "faqEnterpriseTitle", answerKey: "faqEnterpriseAnswer" },
+  { questionKey: "faqStudentTitle", answerKey: "faqStudentAnswer" },
 ];
 
 function FAQItem({
@@ -87,6 +56,7 @@ function FAQItem({
 }
 
 export function FAQSection() {
+  const t = useTranslations("pricing");
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   return (
@@ -94,26 +64,26 @@ export function FAQSection() {
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            Frequently asked questions
+            {t("freqAsked")}
           </h2>
           <p className="text-zinc-400">
-            Can&apos;t find what you&apos;re looking for? Reach out to our{" "}
+            {t("cantFind")}{" "}
             <a
               href="mailto:support@appmake.dev"
               className="text-indigo-400 hover:text-indigo-300 underline"
             >
-              support team
+              {t("supportTeam")}
             </a>
             .
           </p>
         </div>
 
         <div className="bg-zinc-900/50 rounded-2xl border border-zinc-800 px-6">
-          {faqs.map((faq, index) => (
+          {faqKeys.map((faq, index) => (
             <FAQItem
               key={index}
-              question={faq.question}
-              answer={faq.answer}
+              question={t(faq.questionKey)}
+              answer={t(faq.answerKey)}
               isOpen={openIndex === index}
               onToggle={() =>
                 setOpenIndex(openIndex === index ? null : index)

@@ -1,7 +1,10 @@
 import Link from "next/link";
 import Image from "next/image";
+import { getTranslations } from "next-intl/server";
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const t = await getTranslations("landing");
+
   return (
     <div className="flex flex-col">
       {/* Hero */}
@@ -23,24 +26,23 @@ export default function LandingPage() {
           className="block dark:hidden"
         />
         <h1 className="max-w-2xl text-4xl font-bold tracking-tight sm:text-5xl">
-          Build apps with AI
+          {t("buildAppsWithAI")}
         </h1>
         <p className="max-w-lg text-lg text-muted-foreground">
-          Describe what you want, and we build it. From idea to deployed app in
-          minutes — no coding required.
+          {t("landingDescription")}
         </p>
         <div className="flex gap-3">
           <Link
             href="/register"
             className="inline-flex h-10 items-center rounded-md bg-primary px-6 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Get started free
+            {t("getStartedFree")}
           </Link>
           <Link
             href="/pricing"
             className="inline-flex h-10 items-center rounded-md border px-6 text-sm font-medium transition-colors hover:bg-accent"
           >
-            View pricing
+            {t("viewPricing")}
           </Link>
         </div>
       </section>

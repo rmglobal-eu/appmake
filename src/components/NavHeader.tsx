@@ -2,6 +2,7 @@
 
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import Image from "next/image";
 import { ThemeToggle } from "./ThemeToggle";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,8 @@ import { Plus, LogOut, FolderOpen } from "lucide-react";
 export function NavHeader() {
   const { data: session } = useSession();
   const router = useRouter();
+  const t = useTranslations("nav");
+  const tc = useTranslations("common");
 
   return (
     <header className="flex h-12 shrink-0 items-center justify-between border-b bg-background px-4">
@@ -51,7 +54,7 @@ export function NavHeader() {
             onClick={() => router.push("/new")}
           >
             <Plus className="mr-1 h-3 w-3" />
-            New
+            {t("newProject")}
           </Button>
         )}
         <ThemeToggle />
@@ -77,12 +80,12 @@ export function NavHeader() {
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => router.push("/dashboard")}>
                 <FolderOpen className="mr-2 h-4 w-4" />
-                Projects
+                {t("projects")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => signOut()}>
                 <LogOut className="mr-2 h-4 w-4" />
-                Sign out
+                {t("signOut")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

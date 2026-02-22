@@ -1,42 +1,43 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Check, X, Minus } from "lucide-react";
 
 type CellValue = boolean | string;
 
 interface FeatureRow {
-  name: string;
+  nameKey: string;
   free: CellValue;
   pro: CellValue;
   team: CellValue;
 }
 
 interface FeatureCategory {
-  category: string;
+  categoryKey: string;
   features: FeatureRow[];
 }
 
 const comparisonData: FeatureCategory[] = [
   {
-    category: "AI Features",
+    categoryKey: "AI Features",
     features: [
-      { name: "Messages per day", free: "20", pro: "200", team: "1,000" },
-      { name: "Basic models (GPT-3.5)", free: true, pro: true, team: true },
+      { nameKey: "messagesPerDay", free: "20", pro: "200", team: "1,000" },
+      { nameKey: "basicModels", free: true, pro: true, team: true },
       {
-        name: "Advanced models (GPT-4, Claude)",
+        nameKey: "advancedModels",
         free: false,
         pro: true,
         team: true,
       },
-      { name: "Custom model fine-tuning", free: false, pro: false, team: true },
+      { nameKey: "customFineTuning", free: false, pro: false, team: true },
       {
-        name: "AI code generation",
+        nameKey: "codeGeneration",
         free: "Basic",
         pro: "Advanced",
         team: "Advanced",
       },
       {
-        name: "Context window",
+        nameKey: "contextWindow",
         free: "4K tokens",
         pro: "32K tokens",
         team: "128K tokens",
@@ -44,65 +45,65 @@ const comparisonData: FeatureCategory[] = [
     ],
   },
   {
-    category: "Projects",
+    categoryKey: "Projects",
     features: [
-      { name: "Active projects", free: "3", pro: "50", team: "Unlimited" },
-      { name: "Storage", free: "1 GB", pro: "10 GB", team: "100 GB" },
+      { nameKey: "activeProjects", free: "3", pro: "50", team: "Unlimited" },
+      { nameKey: "storage", free: "1 GB", pro: "10 GB", team: "100 GB" },
       {
-        name: "Max file size",
+        nameKey: "maxFileSize",
         free: "5 MB",
         pro: "50 MB",
         team: "500 MB",
       },
-      { name: "Version history", free: false, pro: true, team: true },
-      { name: "Project templates", free: "5", pro: "All", team: "All + Custom" },
-      { name: "Export to code", free: false, pro: true, team: true },
+      { nameKey: "versionHistory", free: false, pro: true, team: true },
+      { nameKey: "projectTemplates", free: "5", pro: "All", team: "All + Custom" },
+      { nameKey: "exportToCode", free: false, pro: true, team: true },
     ],
   },
   {
-    category: "Collaboration",
+    categoryKey: "Collaboration",
     features: [
-      { name: "Team members", free: "1", pro: "1", team: "Up to 25" },
+      { nameKey: "teamMembers", free: "1", pro: "1", team: "Up to 25" },
       {
-        name: "Shared projects",
+        nameKey: "sharedProjects",
         free: false,
         pro: false,
         team: true,
       },
       {
-        name: "Real-time collaboration",
+        nameKey: "realTimeCollaboration",
         free: false,
         pro: false,
         team: true,
       },
       {
-        name: "Role-based access control",
+        nameKey: "roleBasedAccess",
         free: false,
         pro: false,
         team: true,
       },
-      { name: "Activity log", free: false, pro: false, team: true },
+      { nameKey: "activityLog", free: false, pro: false, team: true },
     ],
   },
   {
-    category: "Support",
+    categoryKey: "Support",
     features: [
-      { name: "Community forum", free: true, pro: true, team: true },
-      { name: "Email support", free: false, pro: true, team: true },
+      { nameKey: "communityForum", free: true, pro: true, team: true },
+      { nameKey: "emailSupport", free: false, pro: true, team: true },
       {
-        name: "Priority support",
+        nameKey: "prioritySupport",
         free: false,
         pro: true,
         team: true,
       },
       {
-        name: "Dedicated account manager",
+        nameKey: "dedicatedManager",
         free: false,
         pro: false,
         team: true,
       },
       {
-        name: "SLA guarantee",
+        nameKey: "slaGuarantee",
         free: false,
         pro: false,
         team: "99.9%",
@@ -110,14 +111,14 @@ const comparisonData: FeatureCategory[] = [
     ],
   },
   {
-    category: "Deployment",
+    categoryKey: "Deployment",
     features: [
-      { name: "Subdomain hosting", free: true, pro: true, team: true },
-      { name: "Custom domain", free: false, pro: false, team: true },
-      { name: "SSL certificate", free: true, pro: true, team: true },
-      { name: "Auto-scaling", free: false, pro: true, team: true },
-      { name: "API access", free: false, pro: false, team: true },
-      { name: "CI/CD integration", free: false, pro: false, team: true },
+      { nameKey: "subdomainHosting", free: true, pro: true, team: true },
+      { nameKey: "customDomain", free: false, pro: false, team: true },
+      { nameKey: "sslCertificate", free: true, pro: true, team: true },
+      { nameKey: "autoScaling", free: false, pro: true, team: true },
+      { nameKey: "apiAccess", free: false, pro: false, team: true },
+      { nameKey: "cicdIntegration", free: false, pro: false, team: true },
     ],
   },
 ];
@@ -136,15 +137,17 @@ function CellContent({ value }: { value: CellValue }) {
 }
 
 export function PlanComparison() {
+  const t = useTranslations("pricing");
+
   return (
     <section className="py-20 px-4">
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            Compare plans in detail
+            {t("compareDetail")}
           </h2>
           <p className="text-zinc-400">
-            See exactly what you get with each plan
+            {t("compareDetailDesc")}
           </p>
         </div>
 
@@ -153,33 +156,33 @@ export function PlanComparison() {
             <thead>
               <tr className="border-b border-zinc-800">
                 <th className="text-left py-4 px-4 text-zinc-400 font-medium text-sm w-[40%]">
-                  Feature
+                  {t("feature")}
                 </th>
                 <th className="text-center py-4 px-4 text-zinc-300 font-semibold text-sm w-[20%]">
-                  Free
+                  {t("free")}
                 </th>
                 <th className="text-center py-4 px-4 text-indigo-400 font-semibold text-sm w-[20%]">
-                  Pro
+                  {t("pro")}
                 </th>
                 <th className="text-center py-4 px-4 text-zinc-300 font-semibold text-sm w-[20%]">
-                  Team
+                  {t("team")}
                 </th>
               </tr>
             </thead>
             <tbody>
               {comparisonData.map((category) => (
                 <>
-                  <tr key={category.category}>
+                  <tr key={category.categoryKey}>
                     <td
                       colSpan={4}
                       className="pt-8 pb-3 px-4 text-xs font-bold text-zinc-500 uppercase tracking-wider"
                     >
-                      {category.category}
+                      {category.categoryKey}
                     </td>
                   </tr>
                   {category.features.map((feature, featureIndex) => (
                     <tr
-                      key={`${category.category}-${feature.name}`}
+                      key={`${category.categoryKey}-${feature.nameKey}`}
                       className={`${
                         featureIndex % 2 === 0
                           ? "bg-zinc-900/50"
@@ -187,7 +190,7 @@ export function PlanComparison() {
                       } border-b border-zinc-800/50`}
                     >
                       <td className="py-3.5 px-4 text-sm text-zinc-300">
-                        {feature.name}
+                        {t(feature.nameKey)}
                       </td>
                       <td className="py-3.5 px-4 text-center">
                         <CellContent value={feature.free} />

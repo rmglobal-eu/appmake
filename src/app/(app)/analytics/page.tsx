@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import UsageChart from "@/components/analytics/UsageChart";
 import ErrorRateChart from "@/components/analytics/ErrorRateChart";
 import ModelDistribution from "@/components/analytics/ModelDistribution";
@@ -32,13 +33,14 @@ interface AnalyticsData {
   }[];
 }
 
-const PERIOD_OPTIONS: { label: string; value: Period }[] = [
-  { label: "7 days", value: "7d" },
-  { label: "30 days", value: "30d" },
-  { label: "90 days", value: "90d" },
+const PERIOD_KEYS: { key: string; value: Period }[] = [
+  { key: "7days", value: "7d" },
+  { key: "30days", value: "30d" },
+  { key: "90days", value: "90d" },
 ];
 
 export default function AnalyticsPage() {
+  const t = useTranslations("analytics");
   const [period, setPeriod] = useState<Period>("30d");
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -77,15 +79,15 @@ export default function AnalyticsPage() {
         {/* Header */}
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-white">Analytics</h1>
+            <h1 className="text-2xl font-bold text-white">{t("analytics")}</h1>
             <p className="mt-1 text-sm text-white/40">
-              Monitor your usage, performance, and costs
+              {t("analyticsDesc")}
             </p>
           </div>
           <div className="flex items-center gap-3">
             {/* Date range selector */}
             <div className="inline-flex rounded-lg border border-white/10 bg-[#12121a] p-1">
-              {PERIOD_OPTIONS.map((opt) => (
+              {PERIOD_KEYS.map((opt) => (
                 <button
                   key={opt.value}
                   onClick={() => setPeriod(opt.value)}
@@ -95,39 +97,39 @@ export default function AnalyticsPage() {
                       : "text-white/40 hover:text-white/60"
                   }`}
                 >
-                  {opt.label}
+                  {t(opt.key)}
                 </button>
               ))}
             </div>
             {/* Export dropdown */}
             <div className="relative group">
               <button className="rounded-lg border border-white/10 bg-[#12121a] px-3 py-1.5 text-xs font-medium text-white/60 transition-colors hover:text-white">
-                Export
+                {t("export")}
               </button>
               <div className="absolute right-0 top-full z-10 mt-1 hidden w-40 rounded-lg border border-white/10 bg-[#1a1a22] py-1 shadow-xl group-hover:block">
                 <button
                   onClick={() => handleExport("csv", "usage")}
                   className="block w-full px-3 py-1.5 text-left text-xs text-white/60 hover:bg-white/5 hover:text-white"
                 >
-                  Usage (CSV)
+                  {t("usageCsv")}
                 </button>
                 <button
                   onClick={() => handleExport("csv", "errors")}
                   className="block w-full px-3 py-1.5 text-left text-xs text-white/60 hover:bg-white/5 hover:text-white"
                 >
-                  Errors (CSV)
+                  {t("errorsCsv")}
                 </button>
                 <button
                   onClick={() => handleExport("csv", "costs")}
                   className="block w-full px-3 py-1.5 text-left text-xs text-white/60 hover:bg-white/5 hover:text-white"
                 >
-                  Costs (CSV)
+                  {t("costsCsv")}
                 </button>
                 <button
                   onClick={() => handleExport("json", "usage")}
                   className="block w-full px-3 py-1.5 text-left text-xs text-white/60 hover:bg-white/5 hover:text-white"
                 >
-                  Usage (JSON)
+                  {t("usageJson")}
                 </button>
               </div>
             </div>
@@ -149,7 +151,7 @@ export default function AnalyticsPage() {
               onClick={fetchData}
               className="mt-3 rounded-lg bg-red-500/10 px-4 py-2 text-xs font-medium text-red-400 transition-colors hover:bg-red-500/20"
             >
-              Retry
+              {t("retry")}
             </button>
           </div>
         )}

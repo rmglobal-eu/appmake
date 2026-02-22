@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { signOut } from "next-auth/react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -112,6 +113,9 @@ function NavItem({
 export function DashboardSidebar({ user, projects, isOpen, onClose }: DashboardSidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const t = useTranslations("dashboard");
+  const tCommon = useTranslations("common");
+  const tNav = useTranslations("nav");
   const firstName = user.name?.split(" ")[0] || "User";
   const recentProjects = projects.slice(0, 5);
   const [recentOpen, setRecentOpen] = useState(false);
@@ -161,7 +165,7 @@ export function DashboardSidebar({ user, projects, isOpen, onClose }: DashboardS
                 </div>
                 <div>
                   <p className="text-sm font-semibold">{firstName}&apos;s AppMake</p>
-                  <p className="text-xs text-white/40">Free Plan &bull; 1 member</p>
+                  <p className="text-xs text-white/40">{t("freePlan")} &bull; {t("member")}</p>
                 </div>
               </div>
 
@@ -169,11 +173,11 @@ export function DashboardSidebar({ user, projects, isOpen, onClose }: DashboardS
               <div className="mt-3 flex gap-2">
                 <button onClick={() => { router.push("/settings?tab=workspace"); onClose(); }} className="flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-xs font-medium text-white/70 transition-colors hover:bg-white/15">
                   <Settings className="h-3.5 w-3.5" />
-                  Settings
+                  {tCommon("settings")}
                 </button>
                 <button className="flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-xs font-medium text-white/70 transition-colors hover:bg-white/15">
                   <UserPlus className="h-3.5 w-3.5" />
-                  Invite members
+                  {t("inviteMembers")}
                 </button>
               </div>
             </div>
@@ -182,28 +186,28 @@ export function DashboardSidebar({ user, projects, isOpen, onClose }: DashboardS
             <div className="mx-4 flex items-center justify-between rounded-xl bg-white/5 px-4 py-3">
               <div className="flex items-center gap-2">
                 <Zap className="h-4 w-4 text-yellow-400" />
-                <span className="text-sm font-medium">Turn Pro</span>
+                <span className="text-sm font-medium">{t("turnPro")}</span>
               </div>
               <button className="rounded-lg bg-violet-600 px-4 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-violet-500">
-                Upgrade
+                {tCommon("upgrade")}
               </button>
             </div>
 
             {/* Credits */}
             <div className="mx-4 mt-2 rounded-xl bg-white/5 px-4 py-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Credits</span>
-                <span className="text-sm text-white/50">5 left &rsaquo;</span>
+                <span className="text-sm font-medium">{t("credits")}</span>
+                <span className="text-sm text-white/50">{t("creditsLeft")} &rsaquo;</span>
               </div>
               <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
                 <div className="h-full w-[80%] rounded-full bg-violet-500" />
               </div>
-              <p className="mt-1.5 text-[11px] text-white/30">Daily credits reset at midnight UTC</p>
+              <p className="mt-1.5 text-[11px] text-white/30">{t("dailyCreditsReset")}</p>
             </div>
 
             {/* All workspaces */}
             <div className="mt-3 border-t border-white/10 px-4 pt-3 pb-2">
-              <p className="mb-2 text-[11px] font-medium text-white/30">All workspaces</p>
+              <p className="mb-2 text-[11px] font-medium text-white/30">{t("allWorkspaces")}</p>
               <div className="flex items-center gap-3 rounded-lg px-2 py-1.5">
                 <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-violet-600 text-[10px] font-bold text-white">
                   {firstName.charAt(0).toUpperCase()}
@@ -220,7 +224,7 @@ export function DashboardSidebar({ user, projects, isOpen, onClose }: DashboardS
                 <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/5">
                   <Plus className="h-4 w-4" />
                 </div>
-                Create new workspace
+                {t("createNewWorkspace")}
               </button>
             </div>
           </DropdownMenuContent>
@@ -233,17 +237,17 @@ export function DashboardSidebar({ user, projects, isOpen, onClose }: DashboardS
         <div className="space-y-0.5">
           <NavItem
             icon={Home}
-            label="Home"
+            label={t("home")}
             active={pathname === "/dashboard"}
             onClick={() => { router.push("/dashboard"); onClose(); }}
           />
-          <NavItem icon={Search} label="Search" onClick={() => { setSearchQuery(""); setSearchOpen(true); }} />
+          <NavItem icon={Search} label={t("search")} onClick={() => { setSearchQuery(""); setSearchOpen(true); }} />
         </div>
 
         {/* Projects section */}
         <div className="mt-5">
           <p className="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-wider text-white/30">
-            Projects
+            {t("projects")}
           </p>
 
           {/* Recent (collapsible) */}
@@ -252,7 +256,7 @@ export function DashboardSidebar({ user, projects, isOpen, onClose }: DashboardS
             className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium text-white/60 transition-colors hover:bg-white/5 hover:text-white/80"
           >
             <Clock className="h-4 w-4 shrink-0" />
-            <span>Recent</span>
+            <span>{t("recent")}</span>
             <ChevronRight
               className={`ml-auto h-3.5 w-3.5 text-white/30 transition-transform ${recentOpen ? "rotate-90" : ""}`}
             />
@@ -275,19 +279,19 @@ export function DashboardSidebar({ user, projects, isOpen, onClose }: DashboardS
           <div className="mt-0.5 space-y-0.5">
             <NavItem
               icon={LayoutGrid}
-              label="All projects"
+              label={t("allProjects")}
               active={pathname === "/projects"}
               onClick={() => { router.push("/projects"); onClose(); }}
             />
             <NavItem
               icon={Star}
-              label="Starred"
+              label={t("starred")}
               active={pathname === "/starred"}
               onClick={() => { router.push("/starred"); onClose(); }}
             />
             <NavItem
               icon={Users}
-              label="Shared with me"
+              label={t("sharedWithMe")}
               active={pathname === "/shared"}
               onClick={() => { router.push("/shared"); onClose(); }}
             />
@@ -297,34 +301,34 @@ export function DashboardSidebar({ user, projects, isOpen, onClose }: DashboardS
         {/* Resources section */}
         <div className="mt-5">
           <p className="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-wider text-white/30">
-            Resources
+            {t("resources")}
           </p>
           <NavItem
             icon={Compass}
-            label="Discover"
+            label={t("discover")}
             active={pathname === "/discover"}
             onClick={() => { router.push("/discover"); onClose(); }}
           />
           <NavItem
             icon={LayoutTemplate}
-            label="Templates"
+            label={t("templates")}
             active={pathname === "/templates"}
             onClick={() => { router.push("/templates"); onClose(); }}
           />
           <NavItem
             icon={Sparkles}
-            label="Design System"
+            label={t("designSystem")}
             active={pathname === "/design-system"}
             onClick={() => { router.push("/design-system"); onClose(); }}
             right={
               <span className="rounded-full bg-yellow-500/15 px-1.5 py-0.5 text-[10px] font-medium text-yellow-400">
-                Staging
+                {t("staging")}
               </span>
             }
           />
           <NavItem
             icon={Users2}
-            label="Community"
+            label={t("community")}
             active={pathname === "/community"}
             onClick={() => { router.push("/community"); onClose(); }}
           />
@@ -333,23 +337,23 @@ export function DashboardSidebar({ user, projects, isOpen, onClose }: DashboardS
         {/* Analytics & Account section */}
         <div className="mt-5">
           <p className="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-wider text-white/30">
-            Account
+            {t("account")}
           </p>
           <NavItem
             icon={BarChart3}
-            label="Analytics"
+            label={t("analytics")}
             active={pathname === "/analytics"}
             onClick={() => { router.push("/analytics"); onClose(); }}
           />
           <NavItem
             icon={CreditCard}
-            label="Billing"
+            label={t("billing")}
             active={pathname === "/billing"}
             onClick={() => { router.push("/billing"); onClose(); }}
           />
           <NavItem
             icon={Settings}
-            label="Settings"
+            label={tCommon("settings")}
             active={pathname?.startsWith("/settings")}
             onClick={() => { router.push("/settings"); onClose(); }}
           />
@@ -363,15 +367,15 @@ export function DashboardSidebar({ user, projects, isOpen, onClose }: DashboardS
           onClick={() => setShareOpen(true)}
           className="w-full rounded-xl border border-white/5 bg-white/[0.03] px-3 py-2.5 text-left transition-colors hover:border-white/10 hover:bg-white/[0.06]"
         >
-          <p className="text-[13px] font-medium text-white">Share AppMake</p>
-          <p className="text-[11px] text-white/40">100 credits per paid referral</p>
+          <p className="text-[13px] font-medium text-white">{t("shareAppMake")}</p>
+          <p className="text-[11px] text-white/40">{t("creditsPerPaidReferral")}</p>
         </button>
 
         {/* Upgrade card */}
         <div className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.03] px-3 py-2.5">
           <div>
-            <p className="text-[13px] font-medium text-white">Upgrade to Pro</p>
-            <p className="text-[11px] text-white/40">Unlock more benefits</p>
+            <p className="text-[13px] font-medium text-white">{t("upgradeToPro")}</p>
+            <p className="text-[11px] text-white/40">{t("unlockMoreBenefits")}</p>
           </div>
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-600">
             <Zap className="h-4 w-4 text-white" />
@@ -397,33 +401,33 @@ export function DashboardSidebar({ user, projects, isOpen, onClose }: DashboardS
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => { router.push("/settings?tab=account"); onClose(); }}>
                 <User className="mr-2 h-4 w-4" />
-                Profile
+                {tCommon("profile")}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => { router.push("/settings?tab=workspace"); onClose(); }}>
                 <Settings className="mr-2 h-4 w-4" />
-                Settings
+                {tCommon("settings")}
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <Moon className="mr-2 h-4 w-4" />
-                Appearance
+                {t("appearance")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem>
                 <HelpCircle className="mr-2 h-4 w-4" />
-                Support
+                {t("support")}
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <FileText className="mr-2 h-4 w-4" />
-                Documentation
+                {t("documentation")}
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <Globe className="mr-2 h-4 w-4" />
-                Homepage
+                {t("homepage")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => signOut()}>
                 <LogOut className="mr-2 h-4 w-4" />
-                Sign out
+                {tNav("signOut")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -456,7 +460,7 @@ export function DashboardSidebar({ user, projects, isOpen, onClose }: DashboardS
           {/* Header badge + close */}
           <div className="flex items-center justify-between px-6 pt-5">
             <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white/70">
-              Earn 100+ credits
+              {t("earn100Credits")}
             </span>
             <button
               onClick={() => setShareOpen(false)}
@@ -471,9 +475,9 @@ export function DashboardSidebar({ user, projects, isOpen, onClose }: DashboardS
             <div className="flex items-center gap-3">
               <div>
                 <DialogTitle className="text-2xl font-bold text-white">
-                  Spread the love
+                  {t("spreadTheLove")}
                 </DialogTitle>
-                <p className="mt-0.5 text-sm text-white/40">and earn free credits</p>
+                <p className="mt-0.5 text-sm text-white/40">{t("earnFreeCredits")}</p>
               </div>
               <div className="ml-auto flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-500 via-orange-400 to-yellow-300">
                 <Sparkles className="h-7 w-7 text-white" />
@@ -483,19 +487,19 @@ export function DashboardSidebar({ user, projects, isOpen, onClose }: DashboardS
 
           {/* How it works */}
           <div className="space-y-3 px-6 pt-3">
-            <p className="text-xs font-medium text-white/50">How it works:</p>
+            <p className="text-xs font-medium text-white/50">{t("howItWorks")}</p>
             <div className="flex items-start gap-3">
               <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/10">
                 <Sparkles className="h-3 w-3 text-white/60" />
               </div>
-              <p className="text-sm text-white/70">Share your invite link</p>
+              <p className="text-sm text-white/70">{t("shareInviteLink")}</p>
             </div>
             <div className="flex items-start gap-3">
               <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/10">
                 <Users className="h-3 w-3 text-white/60" />
               </div>
               <p className="text-sm text-white/70">
-                They sign up and get <span className="font-semibold text-white">extra 10 credits</span>
+                {t("theySignUpAndGet")} <span className="font-semibold text-white">{t("extra10Credits")}</span>
               </p>
             </div>
             <div className="flex items-start gap-3">
@@ -503,14 +507,14 @@ export function DashboardSidebar({ user, projects, isOpen, onClose }: DashboardS
                 <Zap className="h-3 w-3 text-white/60" />
               </div>
               <p className="text-sm text-white/70">
-                You get <span className="font-semibold text-white">100 credits</span> once they subscribe to a paid plan
+                {t("youGet")} <span className="font-semibold text-white">{t("creditsOnce")}</span>
               </p>
             </div>
           </div>
 
           {/* Stats */}
           <div className="px-6 pt-4">
-            <p className="text-xs text-white/30">0 signed up, 0 converted</p>
+            <p className="text-xs text-white/30">{t("signedUpConverted")}</p>
           </div>
 
           {/* Copy link */}
@@ -526,10 +530,10 @@ export function DashboardSidebar({ user, projects, isOpen, onClose }: DashboardS
               >
                 {copied ? (
                   <span className="flex items-center gap-1">
-                    <Check className="h-3 w-3" /> Copied
+                    <Check className="h-3 w-3" /> {tCommon("copied")}
                   </span>
                 ) : (
-                  "Copy link"
+                  t("copyLink")
                 )}
               </button>
             </div>
@@ -538,7 +542,7 @@ export function DashboardSidebar({ user, projects, isOpen, onClose }: DashboardS
           {/* Footer */}
           <div className="border-t border-white/5 px-6 py-3">
             <button className="text-xs text-white/30 transition-colors hover:text-white/50">
-              View Terms and Conditions
+              {t("viewTermsAndConditions")}
             </button>
           </div>
         </DialogContent>
@@ -550,7 +554,7 @@ export function DashboardSidebar({ user, projects, isOpen, onClose }: DashboardS
           showCloseButton={false}
           className="max-w-2xl border-white/10 bg-[#1c1c20] p-0 text-white shadow-2xl"
         >
-          <DialogTitle className="sr-only">Search projects</DialogTitle>
+          <DialogTitle className="sr-only">{t("search")} {t("projects").toLowerCase()}</DialogTitle>
 
           {/* Search input */}
           <div className="flex items-center gap-3 border-b border-white/10 px-5 py-4">
@@ -559,7 +563,7 @@ export function DashboardSidebar({ user, projects, isOpen, onClose }: DashboardS
               autoFocus
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search projects"
+              placeholder={t("search") + " " + t("projects").toLowerCase()}
               className="flex-1 bg-transparent text-lg text-white placeholder-white/30 outline-none"
             />
             {searchQuery && (
@@ -575,7 +579,7 @@ export function DashboardSidebar({ user, projects, isOpen, onClose }: DashboardS
           {/* Results */}
           <div className="max-h-[400px] overflow-y-auto px-3 py-2">
             <p className="px-2 pb-2 text-[11px] font-semibold uppercase tracking-wider text-white/30">
-              Recent Projects
+              {t("recent")} {t("projects")}
             </p>
             {projects
               .filter((p) =>
@@ -622,7 +626,7 @@ export function DashboardSidebar({ user, projects, isOpen, onClose }: DashboardS
                 : true
             ).length === 0 && (
               <p className="px-2 py-8 text-center text-sm text-white/30">
-                No projects found
+                {t("noProjectsFound")}
               </p>
             )}
           </div>

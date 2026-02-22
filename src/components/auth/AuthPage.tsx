@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import Image from "next/image";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -19,6 +20,7 @@ interface AuthPageProps {
 export function AuthPage({ mode }: AuthPageProps) {
   const isLogin = mode === "login";
   const router = useRouter();
+  const t = useTranslations("auth");
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -38,7 +40,7 @@ export function AuthPage({ mode }: AuthPageProps) {
           redirect: false,
         });
         if (res?.error) {
-          toast.error("Invalid email or password");
+          toast.error(t("invalidEmailPassword"));
         } else {
           router.push("/dashboard");
         }
@@ -52,7 +54,7 @@ export function AuthPage({ mode }: AuthPageProps) {
         const data = await res.json();
 
         if (!res.ok) {
-          toast.error(data.error || "Something went wrong");
+          toast.error(data.error || t("somethingWentWrong"));
         } else {
           // Auto-login after registration
           const loginRes = await signIn("credentials", {
@@ -61,7 +63,7 @@ export function AuthPage({ mode }: AuthPageProps) {
             redirect: false,
           });
           if (loginRes?.error) {
-            toast.error("Account created — please sign in");
+            toast.error(t("accountCreated"));
             router.push("/login");
           } else {
             router.push("/dashboard");
@@ -69,7 +71,7 @@ export function AuthPage({ mode }: AuthPageProps) {
         }
       }
     } catch {
-      toast.error("Something went wrong");
+      toast.error(t("somethingWentWrong"));
     } finally {
       setLoading(false);
     }
@@ -109,12 +111,12 @@ export function AuthPage({ mode }: AuthPageProps) {
             {/* Heading */}
             <div>
               <h1 className="text-2xl font-bold tracking-tight">
-                {isLogin ? "Welcome back" : "Create your account"}
+                {isLogin ? t("welcomeBack") : t("createAccount")}
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
                 {isLogin
-                  ? "Sign in to continue building amazing apps"
-                  : "Start building amazing apps with AI"}
+                  ? t("signInToContinue")
+                  : t("startBuilding")}
               </p>
             </div>
 
@@ -123,7 +125,7 @@ export function AuthPage({ mode }: AuthPageProps) {
               {!isLogin && (
                 <Input
                   type="text"
-                  placeholder="Name"
+                  placeholder={t("name")}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   autoComplete="name"
@@ -131,7 +133,7 @@ export function AuthPage({ mode }: AuthPageProps) {
               )}
               <Input
                 type="email"
-                placeholder="Email"
+                placeholder={t("email")}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -139,7 +141,7 @@ export function AuthPage({ mode }: AuthPageProps) {
               />
               <Input
                 type="password"
-                placeholder="Password"
+                placeholder={t("password")}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -153,7 +155,7 @@ export function AuthPage({ mode }: AuthPageProps) {
                 disabled={loading}
               >
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isLogin ? "Sign in" : "Create account"}
+                {isLogin ? t("signIn") : t("createAccountButton")}
               </Button>
             </form>
 
@@ -164,7 +166,7 @@ export function AuthPage({ mode }: AuthPageProps) {
               </div>
               <div className="relative flex justify-center text-xs">
                 <span className="bg-background px-3 text-muted-foreground">
-                  or continue with
+                  {t("orContinueWith")}
                 </span>
               </div>
             </div>
@@ -248,7 +250,7 @@ export function AuthPage({ mode }: AuthPageProps) {
                 size="sm"
                 className="w-full text-xs text-muted-foreground"
               >
-                Dev Login
+                {t("devLogin")}
               </Button>
             )}
           </div>
@@ -257,22 +259,22 @@ export function AuthPage({ mode }: AuthPageProps) {
           <p className="mt-8 text-sm text-muted-foreground">
             {isLogin ? (
               <>
-                Don&apos;t have an account?{" "}
+                {t("dontHaveAccount")}{" "}
                 <Link
                   href="/register"
                   className="font-medium text-foreground underline-offset-4 hover:underline"
                 >
-                  Sign up
+                  {t("signUp")}
                 </Link>
               </>
             ) : (
               <>
-                Already have an account?{" "}
+                {t("alreadyHaveAccount")}{" "}
                 <Link
                   href="/login"
                   className="font-medium text-foreground underline-offset-4 hover:underline"
                 >
-                  Sign in
+                  {t("signIn")}
                 </Link>
               </>
             )}
@@ -281,8 +283,7 @@ export function AuthPage({ mode }: AuthPageProps) {
 
         {/* Bottom */}
         <div className="p-6 text-center text-xs text-muted-foreground">
-          By {isLogin ? "signing in" : "signing up"} you agree to our Terms of
-          Service
+          {isLogin ? t("bySigningIn") : t("bySigningUp")}
         </div>
       </div>
 

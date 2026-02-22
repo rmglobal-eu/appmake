@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,20 +13,20 @@ import { Globe, Server, FileCode, Sparkles, LayoutDashboard, ShoppingCart, User,
 const RUNTIME_TEMPLATES = [
   {
     id: "node",
-    name: "Node.js",
-    description: "React, Next.js, Express — anything JavaScript/TypeScript",
+    nameKey: "nodejs",
+    descKey: "nodejsDesc",
     icon: Server,
   },
   {
     id: "python",
-    name: "Python",
-    description: "Flask, FastAPI, Django — Python web apps",
+    nameKey: "python",
+    descKey: "pythonDesc",
     icon: FileCode,
   },
   {
     id: "static",
-    name: "Static",
-    description: "HTML, CSS, JS — simple static websites",
+    nameKey: "static",
+    descKey: "staticDesc",
     icon: Globe,
   },
 ] as const;
@@ -51,6 +52,8 @@ interface StarterTemplate {
 }
 
 export default function NewProjectPage() {
+  const t = useTranslations("newProject");
+  const tc = useTranslations("common");
   const router = useRouter();
   const [name, setName] = useState("");
   const [template, setTemplate] = useState<string>("node");
@@ -99,7 +102,7 @@ export default function NewProjectPage() {
       toast.success("Project created!");
       router.push(`/chat/${projectId}`);
     } catch {
-      toast.error("Failed to create project");
+      toast.error(tc("error"));
       setLoading(false);
     }
   }
@@ -108,15 +111,15 @@ export default function NewProjectPage() {
     <div className="flex h-screen flex-col">
       <NavHeader />
       <div className="mx-auto w-full max-w-3xl flex-1 px-4 py-12">
-        <h1 className="mb-8 text-2xl font-bold">Create New Project</h1>
+        <h1 className="mb-8 text-2xl font-bold">{t("createNewProject")}</h1>
 
         <div className="space-y-6">
           <div>
-            <label className="mb-2 block text-sm font-medium">Project Name</label>
+            <label className="mb-2 block text-sm font-medium">{t("projectName")}</label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="My Awesome App"
+              placeholder={t("myAwesomeApp")}
               autoFocus
             />
           </div>
@@ -129,7 +132,7 @@ export default function NewProjectPage() {
               }`}
               onClick={() => { setTab("blank"); setSelectedStarter(null); }}
             >
-              Blank Project
+              {t("blankProject")}
             </button>
             <button
               className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
@@ -137,30 +140,30 @@ export default function NewProjectPage() {
               }`}
               onClick={() => setTab("starter")}
             >
-              Start from Template
+              {t("startFromTemplate")}
             </button>
           </div>
 
           {tab === "blank" ? (
             <div>
-              <label className="mb-2 block text-sm font-medium">Runtime</label>
+              <label className="mb-2 block text-sm font-medium">{t("runtime")}</label>
               <div className="grid gap-3 sm:grid-cols-3">
-                {RUNTIME_TEMPLATES.map((t) => (
+                {RUNTIME_TEMPLATES.map((rt) => (
                   <Card
-                    key={t.id}
+                    key={rt.id}
                     className={`cursor-pointer transition-colors hover:border-primary ${
-                      template === t.id ? "border-primary bg-primary/5" : ""
+                      template === rt.id ? "border-primary bg-primary/5" : ""
                     }`}
-                    onClick={() => setTemplate(t.id)}
+                    onClick={() => setTemplate(rt.id)}
                   >
                     <CardHeader className="p-4 pb-2">
                       <CardTitle className="flex items-center gap-2 text-sm">
-                        <t.icon className="h-4 w-4" />
-                        {t.name}
+                        <rt.icon className="h-4 w-4" />
+                        {t(rt.nameKey)}
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="px-4 pb-4">
-                      <p className="text-xs text-muted-foreground">{t.description}</p>
+                      <p className="text-xs text-muted-foreground">{t(rt.descKey)}</p>
                     </CardContent>
                   </Card>
                 ))}
@@ -172,7 +175,7 @@ export default function NewProjectPage() {
             </div>
           ) : (
             <div>
-              <label className="mb-2 block text-sm font-medium">Choose a Template</label>
+              <label className="mb-2 block text-sm font-medium">{t("chooseTemplate")}</label>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {starters.map((s) => {
                   const Icon = CATEGORY_ICONS[s.category] || Globe;
@@ -208,10 +211,10 @@ export default function NewProjectPage() {
               onClick={handleCreate}
               disabled={!name.trim() || loading || (tab === "starter" && !selectedStarter)}
             >
-              {loading ? "Creating..." : "Create Project"}
+              {loading ? tc("loading") : t("createProject")}
             </Button>
             <Button variant="ghost" onClick={() => router.push("/dashboard")}>
-              Cancel
+              {tc("cancel")}
             </Button>
           </div>
         </div>

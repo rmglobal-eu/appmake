@@ -2,16 +2,17 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { ArrowUp, Plus, Mic, ListChecks } from "lucide-react";
 
-const PLACEHOLDERS = [
-  "Build a todo app with drag-and-drop...",
-  "Create a SaaS dashboard with charts...",
-  "Make a landing page for my startup...",
-  "Design a chat application with real-time...",
-  "Build an e-commerce store with payments...",
-];
+const PLACEHOLDER_KEYS = [
+  "buildTodo",
+  "createDashboard",
+  "makeLanding",
+  "designChat",
+  "buildEcommerce",
+] as const;
 
 interface DashboardChatInputProps {
   externalPrompt?: string | null;
@@ -23,6 +24,7 @@ export function DashboardChatInput({
   onPromptConsumed,
 }: DashboardChatInputProps) {
   const router = useRouter();
+  const t = useTranslations("dashboardChat");
   const [value, setValue] = useState("");
   const [loading, setLoading] = useState(false);
   const [placeholderIdx, setPlaceholderIdx] = useState(0);
@@ -34,7 +36,7 @@ export function DashboardChatInput({
     const interval = setInterval(() => {
       setPlaceholderVisible(false);
       setTimeout(() => {
-        setPlaceholderIdx((i) => (i + 1) % PLACEHOLDERS.length);
+        setPlaceholderIdx((i) => (i + 1) % PLACEHOLDER_KEYS.length);
         setPlaceholderVisible(true);
       }, 300);
     }, 4000);
@@ -117,7 +119,7 @@ export function DashboardChatInput({
                 placeholderVisible ? "opacity-100" : "opacity-0"
               }`}
             >
-              {PLACEHOLDERS[placeholderIdx]}
+              {t(PLACEHOLDER_KEYS[placeholderIdx])}
             </span>
           )}
         </div>
@@ -139,7 +141,7 @@ export function DashboardChatInput({
               className="flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-white/50 transition-colors hover:text-white/70"
             >
               <ListChecks className="h-4 w-4" />
-              <span className="text-[13px] font-medium">Plan</span>
+              <span className="text-[13px] font-medium">{t("plan")}</span>
             </button>
 
             <button

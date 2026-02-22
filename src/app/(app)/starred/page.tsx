@@ -3,6 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import {
   Menu,
@@ -45,13 +46,15 @@ function timeAgo(dateStr: string): string {
   return `${months} month${months > 1 ? "s" : ""} ago`;
 }
 
-const SORT_OPTIONS: { key: SortKey; label: string }[] = [
-  { key: "updatedAt", label: "Last edited" },
-  { key: "createdAt", label: "Created" },
-  { key: "name", label: "Name" },
+const SORT_OPTIONS: { key: SortKey; labelKey: string }[] = [
+  { key: "updatedAt", labelKey: "lastEdited" },
+  { key: "createdAt", labelKey: "createdDate" },
+  { key: "name", labelKey: "nameSort" },
 ];
 
 export default function StarredPage() {
+  const t = useTranslations("starred");
+  const tp = useTranslations("projects");
   const { data: session } = useSession();
   const router = useRouter();
   const [allProjects, setAllProjects] = useState<Project[]>([]);
@@ -69,7 +72,7 @@ export default function StarredPage() {
       fetch("/api/projects")
         .then((r) => r.json())
         .then((data) => setAllProjects(data ?? []))
-        .catch(() => toast.error("Failed to load projects"))
+        .catch(() => toast.error(tp("failedToLoadProjects")))
         .finally(() => setLoading(false));
     }
   }, [session]);
@@ -112,7 +115,7 @@ export default function StarredPage() {
         prev.map((p) => (p.id === projectId ? { ...p, starred } : p))
       );
     } catch {
-      toast.error("Failed to update star");
+      toast.error(tp("failedToUpdateStar"));
     }
   }
 
@@ -148,7 +151,7 @@ export default function StarredPage() {
           <div className="flex-1 overflow-y-auto px-6 py-8 md:px-10">
             {/* Header */}
             <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              <h1 className="text-2xl font-bold text-white">Starred</h1>
+              <h1 className="text-2xl font-bold text-white">{t("starred")}</h1>
 
               {!isEmpty && (
                 <div className="flex flex-wrap items-center gap-3">
@@ -158,7 +161,7 @@ export default function StarredPage() {
                     <input
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
-                      placeholder="Search starred..."
+                      placeholder={t("searchStarred")}
                       className="h-9 w-60 rounded-lg border border-white/10 bg-white/5 pl-9 pr-3 text-sm text-white placeholder-white/30 outline-none transition-colors focus:border-white/20 focus:bg-white/[0.08]"
                     />
                     {search && (
@@ -177,7 +180,7 @@ export default function StarredPage() {
                       onClick={() => setSortDropdownOpen(!sortDropdownOpen)}
                       className="flex h-9 items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white/70 transition-colors hover:bg-white/[0.08]"
                     >
-                      {SORT_OPTIONS.find((o) => o.key === sortKey)?.label}
+                      {tp(SORT_OPTIONS.find((o) => o.key === sortKey)?.labelKey ?? "lastEdited")}
                       <ChevronDown className="h-3.5 w-3.5 text-white/40" />
                     </button>
                     {sortDropdownOpen && (
@@ -205,16 +208,16 @@ export default function StarredPage() {
                               }}
                               className="flex w-full items-center justify-between px-3 py-2 text-sm text-white/70 transition-colors hover:bg-white/5"
                             >
-                              <span>{opt.label}</span>
+                              <span>{tp(opt.labelKey)}</span>
                               {sortKey === opt.key && (
                                 <span className="text-xs text-white/40">
                                   {sortDir === "desc"
                                     ? opt.key === "name"
-                                      ? "Z-A"
-                                      : "Newest first"
+                                      ? tp("zA")
+                                      : tp("newestFirst")
                                     : opt.key === "name"
-                                      ? "A-Z"
-                                      : "Oldest first"}
+                                      ? tp("aZ")
+                                      : tp("oldestFirst")}
                                 </span>
                               )}
                             </button>
@@ -354,20 +357,20 @@ export default function StarredPage() {
                   className="text-lg font-semibold text-white/80"
                   style={{ animation: "fadeInUp 600ms ease-out 400ms both" }}
                 >
-                  No starred projects yet
+                  {t("noStarredProjects")}
                 </h2>
                 <p
                   className="mt-2 max-w-sm text-center text-sm text-white/40"
                   style={{ animation: "fadeInUp 600ms ease-out 500ms both" }}
                 >
-                  Star your favorite projects for quick access. Click the star icon on any project card to pin it here.
+                  {t("noStarredDescription")}
                 </p>
                 <button
                   onClick={() => router.push("/projects")}
                   className="mt-6 rounded-xl bg-gradient-to-r from-violet-600 to-pink-600 px-6 py-2.5 text-sm font-semibold text-white transition-all hover:shadow-lg hover:shadow-violet-500/25 active:scale-[0.98]"
                   style={{ animation: "fadeInUp 600ms ease-out 600ms both" }}
                 >
-                  Browse projects
+                  {t("browseProjects")}
                 </button>
               </div>
             ) : viewMode === "grid" ? (
@@ -410,7 +413,7 @@ export default function StarredPage() {
                           {project.name}
                         </p>
                         <p className="text-[11px] text-white/30">
-                          Edited {timeAgo(project.updatedAt)}
+                          {tp("edited")} {timeAgo(project.updatedAt)}
                         </p>
                       </div>
                     </div>
@@ -427,13 +430,13 @@ export default function StarredPage() {
                         <span className="sr-only">Thumbnail</span>
                       </th>
                       <th className="px-3 py-3 text-left text-xs font-medium text-white/40">
-                        Name
+                        {tp("name")}
                       </th>
                       <th className="hidden px-3 py-3 text-left text-xs font-medium text-white/40 md:table-cell">
-                        Created at
+                        {tp("createdAt")}
                       </th>
                       <th className="hidden px-3 py-3 text-left text-xs font-medium text-white/40 sm:table-cell">
-                        Created by
+                        {tp("createdBy")}
                       </th>
                       <th className="w-10 px-3 py-3">
                         <span className="sr-only">Star</span>
@@ -463,7 +466,7 @@ export default function StarredPage() {
                             {project.name}
                           </p>
                           <p className="text-xs text-white/30">
-                            Edited {timeAgo(project.updatedAt)}
+                            {tp("edited")} {timeAgo(project.updatedAt)}
                           </p>
                         </td>
                         <td className="hidden px-3 py-3 text-sm text-white/40 md:table-cell">
@@ -494,7 +497,7 @@ export default function StarredPage() {
 
                 {filtered.length === 0 && starredProjects.length > 0 && (
                   <div className="py-12 text-center text-sm text-white/30">
-                    No starred projects match &ldquo;{search}&rdquo;
+                    {tp("noProjectsMatch")} &ldquo;{search}&rdquo;
                   </div>
                 )}
               </div>
@@ -507,7 +510,7 @@ export default function StarredPage() {
               starredProjects.length > 0 &&
               search && (
                 <div className="py-12 text-center text-sm text-white/30">
-                  No starred projects match &ldquo;{search}&rdquo;
+                  {tp("noProjectsMatch")} &ldquo;{search}&rdquo;
                 </div>
               )}
           </div>

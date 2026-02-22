@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
+import { useTranslations } from "next-intl";
 import Image from "next/image";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -69,6 +70,8 @@ interface BuilderHeaderProps {
 export function BuilderHeader({ onRefresh, onShare, onPublish, onGit, onSupabase, onFigma, onDomain, onReview, onAudit, onExport, onCollab }: BuilderHeaderProps) {
   const router = useRouter();
   const { data: session } = useSession();
+  const t = useTranslations("builder");
+  const tNav = useTranslations("nav");
   const {
     viewMode,
     deviceViewport,
@@ -84,7 +87,7 @@ export function BuilderHeader({ onRefresh, onShare, onPublish, onGit, onSupabase
 
   const errorCount = 0;
 
-  const comingSoon = () => toast("Coming soon!", { duration: 1500 });
+  const comingSoon = () => toast(t("comingSoon"), { duration: 1500 });
 
   return (
     <TooltipProvider delayDuration={300}>
@@ -121,17 +124,17 @@ export function BuilderHeader({ onRefresh, onShare, onPublish, onGit, onSupabase
             <DropdownMenuContent align="start">
               <DropdownMenuItem onClick={() => router.push("/dashboard")}>
                 <FolderOpen className="mr-2 h-4 w-4" />
-                All Projects
+                {t("projects")}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={comingSoon}>
                 <Settings className="mr-2 h-4 w-4" />
-                Project Settings
+                {t("projectSettings")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
           <span className="text-[11px] text-white/30 hidden md:block">
-            Previewing...
+            {t("previewing")}
           </span>
         </div>
 
@@ -143,7 +146,7 @@ export function BuilderHeader({ onRefresh, onShare, onPublish, onGit, onSupabase
                 <History className="h-3.5 w-3.5" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>History</TooltipContent>
+            <TooltipContent>{t("history")}</TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -151,7 +154,7 @@ export function BuilderHeader({ onRefresh, onShare, onPublish, onGit, onSupabase
                 <Copy className="h-3.5 w-3.5" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Duplicate</TooltipContent>
+            <TooltipContent>{t("duplicate")}</TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -159,7 +162,7 @@ export function BuilderHeader({ onRefresh, onShare, onPublish, onGit, onSupabase
                 <LayoutGrid className="h-3.5 w-3.5" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Layout</TooltipContent>
+            <TooltipContent>{t("layout")}</TooltipContent>
           </Tooltip>
         </div>
 
@@ -169,14 +172,14 @@ export function BuilderHeader({ onRefresh, onShare, onPublish, onGit, onSupabase
             active={viewMode === "preview"}
             onClick={() => setViewMode("preview")}
             icon={<Eye className="h-3 w-3" />}
-            label="Preview"
+            label={t("preview")}
             badge={errorCount > 0 ? errorCount : undefined}
           />
           <ViewToggleButton
             active={viewMode === "code"}
             onClick={() => setViewMode("code")}
             icon={<Code2 className="h-3 w-3" />}
-            label="Code"
+            label={t("code")}
           />
           <Tooltip>
             <TooltipTrigger asChild>
@@ -187,7 +190,7 @@ export function BuilderHeader({ onRefresh, onShare, onPublish, onGit, onSupabase
                 <MoreHorizontal className="h-3.5 w-3.5" />
               </button>
             </TooltipTrigger>
-            <TooltipContent>More views</TooltipContent>
+            <TooltipContent>{t("moreViews")}</TooltipContent>
           </Tooltip>
         </div>
 
@@ -206,7 +209,7 @@ export function BuilderHeader({ onRefresh, onShare, onPublish, onGit, onSupabase
                 }`}
                 onClick={() => setPreviewMode("quick")}
               >
-                Quick
+                {t("quick")}
               </button>
               <button
                 className={`rounded px-2 py-0.5 text-[10px] font-medium transition-colors ${
@@ -216,7 +219,7 @@ export function BuilderHeader({ onRefresh, onShare, onPublish, onGit, onSupabase
                 }`}
                 onClick={() => setPreviewMode("sandbox")}
               >
-                Sandbox
+                {t("sandbox")}
               </button>
             </div>
 
@@ -225,19 +228,19 @@ export function BuilderHeader({ onRefresh, onShare, onPublish, onGit, onSupabase
                 active={deviceViewport === "desktop"}
                 onClick={() => setDeviceViewport("desktop")}
                 icon={<Monitor className="h-3 w-3" />}
-                tooltip="Desktop"
+                tooltip={t("desktop")}
               />
               <DeviceButton
                 active={deviceViewport === "tablet"}
                 onClick={() => setDeviceViewport("tablet")}
                 icon={<Tablet className="h-3 w-3" />}
-                tooltip="Tablet"
+                tooltip={t("tablet")}
               />
               <DeviceButton
                 active={deviceViewport === "mobile"}
                 onClick={() => setDeviceViewport("mobile")}
                 icon={<Smartphone className="h-3 w-3" />}
-                tooltip="Mobile"
+                tooltip={t("mobile")}
               />
             </div>
 
@@ -251,7 +254,7 @@ export function BuilderHeader({ onRefresh, onShare, onPublish, onGit, onSupabase
                   <Maximize2 className="h-3 w-3" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Expand</TooltipContent>
+              <TooltipContent>{t("expand")}</TooltipContent>
             </Tooltip>
 
             <Tooltip>
@@ -260,7 +263,7 @@ export function BuilderHeader({ onRefresh, onShare, onPublish, onGit, onSupabase
                   <RefreshCw className="h-3 w-3" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Refresh preview</TooltipContent>
+              <TooltipContent>{t("refreshPreview")}</TooltipContent>
             </Tooltip>
           </div>
         )}
@@ -272,44 +275,44 @@ export function BuilderHeader({ onRefresh, onShare, onPublish, onGit, onSupabase
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 hidden sm:flex text-white/70 hover:text-white hover:bg-white/10">
                 <Settings className="h-3 w-3" />
-                Tools
+                {t("tools")}
                 <ChevronDown className="h-2.5 w-2.5 opacity-50" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuItem onClick={onGit}>
                 <GitBranch className="mr-2 h-4 w-4" />
-                Git / GitHub
+                {t("gitGithub")}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={onSupabase}>
                 <Database className="mr-2 h-4 w-4" />
-                Supabase
+                {t("supabase")}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={onFigma}>
                 <Figma className="mr-2 h-4 w-4" />
-                Import from Figma
+                {t("importFromFigma")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={onReview}>
                 <Search className="mr-2 h-4 w-4" />
-                AI Code Review
+                {t("aiCodeReview")}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={onAudit}>
                 <Gauge className="mr-2 h-4 w-4" />
-                Performance Audit
+                {t("performanceAudit")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={onDomain}>
                 <Globe className="mr-2 h-4 w-4" />
-                Custom Domains
+                {t("customDomains")}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={onExport}>
                 <Smartphone className="mr-2 h-4 w-4" />
-                Export Mobile App
+                {t("exportMobileApp")}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={onCollab}>
                 <Users className="mr-2 h-4 w-4" />
-                Team / Collaborate
+                {t("teamCollaborate")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -321,7 +324,7 @@ export function BuilderHeader({ onRefresh, onShare, onPublish, onGit, onSupabase
             onClick={onShare ?? comingSoon}
           >
             <Share2 className="h-3 w-3" />
-            Share
+            {t("share")}
           </Button>
 
           <Button
@@ -330,7 +333,7 @@ export function BuilderHeader({ onRefresh, onShare, onPublish, onGit, onSupabase
             onClick={onPublish ?? comingSoon}
           >
             <Rocket className="h-3 w-3" />
-            Publish
+            {t("publish")}
           </Button>
 
           {session?.user && (
@@ -353,12 +356,12 @@ export function BuilderHeader({ onRefresh, onShare, onPublish, onGit, onSupabase
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => router.push("/dashboard")}>
                   <FolderOpen className="mr-2 h-4 w-4" />
-                  Projects
+                  {tNav("projects")}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => signOut()}>
                   <LogOut className="mr-2 h-4 w-4" />
-                  Sign out
+                  {tNav("signOut")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

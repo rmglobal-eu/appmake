@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   CreditCard,
   ExternalLink,
@@ -43,6 +44,7 @@ const planBadgeColors: Record<string, string> = {
 
 export default function BillingPage() {
   const router = useRouter();
+  const t = useTranslations("billing");
   const [usageData, setUsageData] = useState<UsageData | null>(null);
   const [loading, setLoading] = useState(true);
   const [portalLoading, setPortalLoading] = useState(false);
@@ -85,7 +87,7 @@ export default function BillingPage() {
       <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
         <div className="flex items-center gap-3 text-zinc-500">
           <Loader2 className="w-5 h-5 animate-spin" />
-          <span>Loading billing...</span>
+          <span>{t("loadingBilling")}</span>
         </div>
       </div>
     );
@@ -100,10 +102,10 @@ export default function BillingPage() {
         {/* Header */}
         <div className="mb-10">
           <h1 className="text-3xl font-bold text-white mb-2">
-            Billing & Usage
+            {t("billingAndUsage")}
           </h1>
           <p className="text-zinc-400">
-            Manage your subscription, view usage, and download invoices.
+            {t("billingDesc")}
           </p>
         </div>
 
@@ -119,7 +121,7 @@ export default function BillingPage() {
               <div>
                 <div className="flex items-center gap-3">
                   <h2 className="text-lg font-semibold text-white">
-                    Current Plan
+                    {t("currentPlan")}
                   </h2>
                   <span
                     className={`text-xs font-semibold px-3 py-1 rounded-full border capitalize ${planBadgeColors[plan]}`}
@@ -129,10 +131,10 @@ export default function BillingPage() {
                 </div>
                 <p className="text-sm text-zinc-500 mt-0.5">
                   {plan === "free"
-                    ? "Free forever with basic features"
+                    ? t("freeForever")
                     : plan === "pro"
-                      ? "$19/month - Advanced features for serious builders"
-                      : "$49/month - Full power for teams"}
+                      ? t("proDesc")
+                      : t("teamDesc")}
                 </p>
               </div>
             </div>
@@ -149,7 +151,7 @@ export default function BillingPage() {
                   ) : (
                     <CreditCard className="w-4 h-4" />
                   )}
-                  Manage Subscription
+                  {t("manageSubscription")}
                   <ExternalLink className="w-3.5 h-3.5" />
                 </button>
               )}
@@ -159,7 +161,7 @@ export default function BillingPage() {
                   className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition-colors"
                 >
                   <Crown className="w-4 h-4" />
-                  Upgrade Plan
+                  {t("upgradePlan")}
                 </button>
               )}
             </div>
@@ -169,13 +171,13 @@ export default function BillingPage() {
         {/* Usage Meters */}
         <div className="mb-8">
           <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-4">
-            Current Usage
+            {t("currentUsage")}
           </h3>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <UsageMeter
               used={usageData?.usage?.messages?.used ?? 0}
               limit={usageData?.usage?.messages?.limit ?? 20}
-              label="Messages Today"
+              label={t("messagesDay")}
               resetAt={
                 usageData?.usage?.messages?.resetsAt
                   ? new Date(usageData.usage.messages.resetsAt)
@@ -185,12 +187,12 @@ export default function BillingPage() {
             <UsageMeter
               used={usageData?.usage?.projects?.used ?? 0}
               limit={usageData?.usage?.projects?.limit ?? 3}
-              label="Projects"
+              label={t("projectsLabel")}
             />
             <UsageMeter
               used={usageData?.usage?.storage?.used ?? 0}
               limit={usageData?.usage?.storage?.limit ?? 1073741824}
-              label="Storage"
+              label={t("storage")}
             />
           </div>
         </div>
@@ -198,7 +200,7 @@ export default function BillingPage() {
         {/* Billing History */}
         <div>
           <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-4">
-            Billing History
+            {t("billingHistory")}
           </h3>
           <BillingHistory />
         </div>

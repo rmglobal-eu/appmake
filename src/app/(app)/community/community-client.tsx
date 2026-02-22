@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Search, ChevronLeft, ChevronRight, Compass } from "lucide-react";
 import ProjectGallery from "@/components/community/ProjectGallery";
 import type { GalleryProject } from "@/components/community/ProjectCard";
@@ -27,6 +28,8 @@ export default function CommunityPageClient({
 }: CommunityPageClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const t = useTranslations("community");
+  const tCommon = useTranslations("common");
   const [searchValue, setSearchValue] = useState(currentSearch);
 
   const updateParams = useCallback(
@@ -64,10 +67,10 @@ export default function CommunityPageClient({
         <div className="mb-8">
           <div className="flex items-center gap-3">
             <Compass className="h-7 w-7 text-blue-400" />
-            <h1 className="text-2xl font-bold text-white">Community</h1>
+            <h1 className="text-2xl font-bold text-white">{t("community")}</h1>
           </div>
           <p className="mt-2 text-sm text-zinc-400">
-            Explore projects built by the AppMake community. Get inspired, remix, and share your own.
+            {t("communityDesc")}
           </p>
         </div>
 
@@ -79,7 +82,7 @@ export default function CommunityPageClient({
               type="text"
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
-              placeholder="Search projects..."
+              placeholder={t("searchProjects")}
               className="w-full rounded-lg border border-zinc-800 bg-zinc-900 py-2.5 pl-10 pr-4 text-sm text-zinc-200 placeholder-zinc-500 outline-none transition-colors focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30"
             />
           </div>
@@ -104,11 +107,11 @@ export default function CommunityPageClient({
 
         {/* Results count */}
         <div className="mb-4 text-xs text-zinc-500">
-          {total} {total === 1 ? "project" : "projects"} found
+          {t("projectsFound", { count: total, type: total === 1 ? "project" : "projects" })}
           {currentSearch && (
             <span>
               {" "}
-              for &ldquo;{currentSearch}&rdquo;
+              {t("for")} &ldquo;{currentSearch}&rdquo;
             </span>
           )}
         </div>
@@ -125,7 +128,7 @@ export default function CommunityPageClient({
               className="flex items-center gap-1 rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-xs text-zinc-400 transition-colors hover:border-zinc-700 hover:text-zinc-200 disabled:cursor-not-allowed disabled:opacity-40"
             >
               <ChevronLeft className="h-3.5 w-3.5" />
-              Previous
+              {tCommon("previous")}
             </button>
 
             <div className="flex items-center gap-1">
@@ -166,7 +169,7 @@ export default function CommunityPageClient({
               disabled={currentPage >= totalPages}
               className="flex items-center gap-1 rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-xs text-zinc-400 transition-colors hover:border-zinc-700 hover:text-zinc-200 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              Next
+              {tCommon("next")}
               <ChevronRight className="h-3.5 w-3.5" />
             </button>
           </div>

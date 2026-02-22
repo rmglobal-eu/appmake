@@ -29,7 +29,9 @@ import {
   Code2,
   Bell,
   KeyRound,
+  Globe,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import AISettingsPanel from "@/components/settings/AISettings";
 import EditorSettingsPanel from "@/components/settings/EditorSettings";
 import NotificationSettingsPanel from "@/components/settings/NotificationSettings";
@@ -46,6 +48,7 @@ function SectionCard({ children }: { children: React.ReactNode }) {
 }
 
 function PageHeader({ title, subtitle }: { title: string; subtitle: string }) {
+  const tc = useTranslations("common");
   return (
     <div className="flex items-center justify-between">
       <div>
@@ -54,7 +57,7 @@ function PageHeader({ title, subtitle }: { title: string; subtitle: string }) {
       </div>
       <button className="flex items-center gap-1.5 text-sm text-white/40 transition-colors hover:text-white/60">
         <FileText className="h-4 w-4" />
-        Docs
+        {tc("docs")}
       </button>
     </div>
   );
@@ -104,6 +107,7 @@ const ACCOUNT_ITEMS = [
 const PREFERENCES_ITEMS = [
   { id: "ai-settings", label: "AI Settings", icon: Sparkles },
   { id: "editor-settings", label: "Editor", icon: Code2 },
+  { id: "language", label: "Language", icon: Globe },
   { id: "notifications", label: "Notifications", icon: Bell },
   { id: "api-keys", label: "API Keys", icon: KeyRound },
 ] as const;
@@ -118,48 +122,49 @@ type TabId = string;
 // ── 1. Workspace Settings ────────────────────────────────────────────
 
 function WorkspaceSettings({ userName }: { userName: string }) {
+  const t = useTranslations("settings");
   const initial = userName.charAt(0).toUpperCase();
   const [workspaceName, setWorkspaceName] = useState(`${userName}'s AppMake`);
 
   return (
     <div>
-      <PageHeader title="Workspace settings" subtitle="Workspaces allow you to collaborate on projects in real time." />
+      <PageHeader title={t("workspaceSettings")} subtitle={t("workspaceDescription")} />
       <div className="mt-8">
         <SectionCard>
           <div className="flex items-center justify-between p-6">
             <div>
-              <h3 className="text-sm font-semibold text-white">Avatar</h3>
-              <p className="mt-0.5 text-sm text-white/40">Set an avatar for your workspace.</p>
+              <h3 className="text-sm font-semibold text-white">{t("avatar")}</h3>
+              <p className="mt-0.5 text-sm text-white/40">{t("setAvatarDesc")}</p>
             </div>
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-600 text-base font-bold text-white">
               {initial}
             </div>
           </div>
           <div className="p-6">
-            <h3 className="text-sm font-semibold text-white">Name</h3>
-            <p className="mt-0.5 text-sm text-white/40">Your full workspace name, as visible to others.</p>
+            <h3 className="text-sm font-semibold text-white">{t("name")}</h3>
+            <p className="mt-0.5 text-sm text-white/40">{t("nameDesc")}</p>
             <div className="mt-3">
               <input
                 value={workspaceName}
                 onChange={(e) => setWorkspaceName(e.target.value.slice(0, 50))}
                 className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition-colors focus:border-white/20"
               />
-              <p className="mt-1 text-right text-xs text-white/30">{workspaceName.length} / 50 characters</p>
+              <p className="mt-1 text-right text-xs text-white/30">{workspaceName.length} / 50 {t("characters")}</p>
             </div>
           </div>
           <div className="flex items-center justify-between p-6">
             <div>
-              <h3 className="text-sm font-semibold text-white">Username</h3>
-              <p className="mt-0.5 text-sm text-white/40">Set a username for the workspace profile page.</p>
+              <h3 className="text-sm font-semibold text-white">{t("username")}</h3>
+              <p className="mt-0.5 text-sm text-white/40">{t("usernameDesc")}</p>
             </div>
             <button className="rounded-lg bg-white/10 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/15">
-              Set username
+              {t("setUsername")}
             </button>
           </div>
           <div className="p-6">
-            <h3 className="text-sm font-semibold text-white">Default monthly member credit limit</h3>
+            <h3 className="text-sm font-semibold text-white">{t("defaultMonthlyCreditLimit")}</h3>
             <p className="mt-0.5 text-sm text-white/40">
-              The default monthly credit limit for members of this workspace. Leave empty to use no limit.
+              {t("creditLimitDesc")}
             </p>
             <div className="mt-3">
               <input
@@ -170,13 +175,13 @@ function WorkspaceSettings({ userName }: { userName: string }) {
           </div>
           <div className="flex items-center justify-between p-6">
             <div>
-              <h3 className="text-sm font-semibold text-white">Leave workspace</h3>
+              <h3 className="text-sm font-semibold text-white">{t("leaveWorkspace")}</h3>
               <p className="mt-0.5 max-w-md text-sm text-white/40">
-                You cannot leave your last workspace. Your account must be a member of at least one workspace.
+                {t("leaveWorkspaceDesc")}
               </p>
             </div>
             <button className="shrink-0 rounded-lg bg-red-500/10 px-4 py-2 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/20">
-              Leave workspace
+              {t("leaveWorkspace")}
             </button>
           </div>
         </SectionCard>
@@ -188,37 +193,42 @@ function WorkspaceSettings({ userName }: { userName: string }) {
 // ── 2. People ────────────────────────────────────────────────────────
 
 function PeopleSettings({ userName, userEmail }: { userName: string; userEmail: string }) {
+  const t = useTranslations("settings");
   const [tab, setTab] = useState<"all" | "invitations" | "collaborators">("all");
-  const tabs = ["All", "Invitations", "Collaborators"] as const;
+  const tabs = [
+    { key: "all", label: t("all") },
+    { key: "invitations", label: t("invitations") },
+    { key: "collaborators", label: t("collaborators") },
+  ] as const;
 
   return (
     <div>
-      <PageHeader title="People" subtitle={`Inviting people to ${userName}'s AppMake gives access to workspace shared projects and credits. You have 1 builder in this workspace.`} />
+      <PageHeader title={t("peopleTitle")} subtitle={t("invitingPeople", { name: userName })} />
 
       <div className="mt-6">
         {/* Tabs + actions */}
         <div className="flex items-center justify-between">
           <div className="flex gap-1">
-            {tabs.map((t) => (
+            {tabs.map((tabItem) => (
               <button
-                key={t}
-                onClick={() => setTab(t.toLowerCase() as typeof tab)}
+                key={tabItem.key}
+                onClick={() => setTab(tabItem.key as typeof tab)}
                 className={`rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors ${
-                  tab === t.toLowerCase() ? "bg-white/10 text-white" : "text-white/40 hover:text-white/60"
+                  tab === tabItem.key ? "bg-white/10 text-white" : "text-white/40 hover:text-white/60"
                 }`}
               >
-                {t}
+                {tabItem.label}
               </button>
             ))}
           </div>
           <div className="flex items-center gap-2">
             <button className="flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-white/50 transition-colors hover:bg-white/5">
               <Download className="h-3.5 w-3.5" />
-              Export
+              {t("export")}
             </button>
             <button className="flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-white/15">
               <UserPlus className="h-3.5 w-3.5" />
-              Invite members
+              {t("inviteMembers")}
             </button>
           </div>
         </div>
@@ -239,12 +249,12 @@ function PeopleSettings({ userName, userEmail }: { userName: string; userEmail: 
         <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] overflow-hidden">
           {/* Header */}
           <div className="grid grid-cols-6 gap-4 border-b border-white/10 px-4 py-3 text-xs font-medium text-white/40">
-            <span>Name</span>
-            <span>Role</span>
-            <span>Joined date</span>
-            <span>Feb usage</span>
-            <span>Total usage</span>
-            <span>Credit limit</span>
+            <span>{t("userTableHeader")}</span>
+            <span>{t("roleHeader")}</span>
+            <span>{t("joinedDateHeader")}</span>
+            <span>{t("febUsageHeader")}</span>
+            <span>{t("totalUsageHeader")}</span>
+            <span>{t("creditLimitHeader")}</span>
           </div>
           {/* Row */}
           <div className="grid grid-cols-6 items-center gap-4 px-4 py-3">
@@ -253,14 +263,14 @@ function PeopleSettings({ userName, userEmail }: { userName: string; userEmail: 
                 {userName.charAt(0).toUpperCase()}
               </div>
               <div>
-                <p className="text-sm font-medium text-white">{userName} <span className="text-white/30">(you)</span></p>
+                <p className="text-sm font-medium text-white">{userName} <span className="text-white/30">{t("you")}</span></p>
                 <p className="text-[11px] text-white/30">{userEmail}</p>
               </div>
             </div>
-            <span className="text-sm text-white/60">Owner</span>
+            <span className="text-sm text-white/60">{t("owner")}</span>
             <span className="text-sm text-white/60">{new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
-            <span className="text-sm text-white/60">13 credits</span>
-            <span className="text-sm text-white/60">14 credits</span>
+            <span className="text-sm text-white/60">13 {t("creditsUsed")}</span>
+            <span className="text-sm text-white/60">14 {t("creditsUsed")}</span>
             <div className="flex items-center justify-between">
               <span className="text-sm text-white/30">—</span>
               <button className="text-white/30 hover:text-white/60">
@@ -270,7 +280,7 @@ function PeopleSettings({ userName, userEmail }: { userName: string; userEmail: 
           </div>
         </div>
 
-        <p className="mt-4 text-xs text-white/30">Showing 1-1 of 1</p>
+        <p className="mt-4 text-xs text-white/30">{t("showing")}</p>
       </div>
     </div>
   );
@@ -279,9 +289,11 @@ function PeopleSettings({ userName, userEmail }: { userName: string; userEmail: 
 // ── 3. Plans & Credits ───────────────────────────────────────────────
 
 function PlansSettings() {
+  const t = useTranslations("settings");
+  const tc = useTranslations("common");
   return (
     <div>
-      <PageHeader title="Plans & credits" subtitle="Manage your subscription plan and credit balance." />
+      <PageHeader title={t("plansAndCredits")} subtitle={t("plansDesc")} />
 
       <div className="mt-8 grid grid-cols-2 gap-4">
         {/* Current plan */}
@@ -291,20 +303,20 @@ function PlansSettings() {
               <Zap className="h-5 w-5 text-white" />
             </div>
             <div>
-              <p className="text-base font-semibold text-white">You&apos;re on Free Plan</p>
-              <p className="text-xs text-white/40">Upgrade anytime</p>
+              <p className="text-base font-semibold text-white">{t("youreOnFreePlan")}</p>
+              <p className="text-xs text-white/40">{t("upgradeAnytime")}</p>
             </div>
           </div>
           <button className="mt-4 rounded-lg bg-white/10 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/15">
-            Manage
+            {tc("manage")}
           </button>
         </div>
 
         {/* Credits remaining */}
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
           <div className="flex items-center justify-between">
-            <p className="text-base font-semibold text-white">Credits remaining</p>
-            <p className="text-sm text-white/50">4.5 of 5</p>
+            <p className="text-base font-semibold text-white">{t("creditsRemaining")}</p>
+            <p className="text-sm text-white/50">4.5 {t("of")} 5</p>
           </div>
           <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-white/10">
             <div className="h-full w-[90%] rounded-full bg-green-500" />
@@ -312,11 +324,11 @@ function PlansSettings() {
           <div className="mt-3 flex items-center gap-4 text-xs text-white/40">
             <span className="flex items-center gap-1">
               <span className="h-1.5 w-1.5 rounded-full bg-white/20" />
-              Daily credits used first
+              {t("dailyCreditsUsedFirst")}
             </span>
           </div>
           <div className="mt-2 space-y-1 text-xs text-white/40">
-            <p>No credits will rollover</p>
+            <p>{t("noCreditsRollover")}</p>
             <p>Daily credits reset at midnight UTC</p>
           </div>
         </div>
@@ -326,16 +338,16 @@ function PlansSettings() {
       <div className="mt-8 grid grid-cols-3 gap-4">
         {/* Pro */}
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-          <h3 className="text-lg font-bold text-white">Pro</h3>
-          <p className="mt-1 text-xs text-white/40">Designed for fast-moving teams building together in real time.</p>
-          <p className="mt-4 text-2xl font-bold text-white">$25 <span className="text-sm font-normal text-white/40">per month</span></p>
-          <p className="mt-1 text-xs text-white/30">shared across unlimited users</p>
+          <h3 className="text-lg font-bold text-white">{t("planPro")}</h3>
+          <p className="mt-1 text-xs text-white/40">{t("planProDesc")}</p>
+          <p className="mt-4 text-2xl font-bold text-white">{t("planProPrice")} <span className="text-sm font-normal text-white/40">{t("planProSubheader")}</span></p>
+          <p className="mt-1 text-xs text-white/30">{t("planProShareDesc")}</p>
           <button className="mt-4 w-full rounded-lg bg-white/10 py-2 text-sm font-medium text-white transition-colors hover:bg-white/15">
-            Upgrade
+            {tc("upgrade")}
           </button>
           <div className="mt-4 space-y-2">
-            <p className="text-xs font-medium text-white/50">All features in Free, plus:</p>
-            {["100 monthly credits", "5 daily credits (up to 150/month)", "Usage-based Cloud + AI", "Credit rollovers", "On-demand credit top-ups"].map((f) => (
+            <p className="text-xs font-medium text-white/50">{t("allFeaturesFreePlus")}</p>
+            {[t("pro100Monthly"), t("pro5Daily"), t("usageBasedCloud"), t("creditRollovers"), t("onDemandTopUp")].map((f) => (
               <p key={f} className="flex items-center gap-2 text-xs text-white/40">
                 <span className="text-green-400">✓</span> {f}
               </p>
@@ -345,16 +357,16 @@ function PlansSettings() {
 
         {/* Business */}
         <div className="rounded-2xl border border-violet-500/30 bg-white/[0.03] p-5">
-          <h3 className="text-lg font-bold text-white">Business</h3>
-          <p className="mt-1 text-xs text-white/40">Advanced controls and power features for growing departments.</p>
-          <p className="mt-4 text-2xl font-bold text-white">$50 <span className="text-sm font-normal text-white/40">per month</span></p>
-          <p className="mt-1 text-xs text-white/30">shared across unlimited users</p>
+          <h3 className="text-lg font-bold text-white">{t("planBusiness")}</h3>
+          <p className="mt-1 text-xs text-white/40">{t("planBusinessDesc")}</p>
+          <p className="mt-4 text-2xl font-bold text-white">{t("planBusinessPrice")} <span className="text-sm font-normal text-white/40">{t("planProSubheader")}</span></p>
+          <p className="mt-1 text-xs text-white/30">{t("planProShareDesc")}</p>
           <button className="mt-4 w-full rounded-lg bg-violet-600 py-2 text-sm font-medium text-white transition-colors hover:bg-violet-500">
-            Upgrade
+            {tc("upgrade")}
           </button>
           <div className="mt-4 space-y-2">
-            <p className="text-xs font-medium text-white/50">All features in Pro, plus:</p>
-            {["100 monthly credits", "Internal publish", "SSO", "Team workspace", "Personal projects"].map((f) => (
+            <p className="text-xs font-medium text-white/50">{t("allFeaturesProPlus")}</p>
+            {[t("pro100Monthly"), t("internalPublish"), t("sso"), t("teamWorkspace"), t("personalProjects")].map((f) => (
               <p key={f} className="flex items-center gap-2 text-xs text-white/40">
                 <span className="text-green-400">✓</span> {f}
               </p>
@@ -364,16 +376,16 @@ function PlansSettings() {
 
         {/* Enterprise */}
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-          <h3 className="text-lg font-bold text-white">Enterprise</h3>
-          <p className="mt-1 text-xs text-white/40">Built for large orgs needing flexibility, scale, and governance.</p>
-          <p className="mt-4 text-lg font-semibold text-white/50">Custom</p>
-          <p className="mt-1 text-xs text-white/30">Flexible plans</p>
+          <h3 className="text-lg font-bold text-white">{t("planEnterprise")}</h3>
+          <p className="mt-1 text-xs text-white/40">{t("planEnterpriseDesc")}</p>
+          <p className="mt-4 text-lg font-semibold text-white/50">{t("planEnterprisePrice")}</p>
+          <p className="mt-1 text-xs text-white/30">{t("flexiblePlans")}</p>
           <button className="mt-4 w-full rounded-lg border border-white/10 py-2 text-sm font-medium text-white/50 transition-colors hover:bg-white/5">
-            Book a demo
+            {t("bookDemo")}
           </button>
           <div className="mt-4 space-y-2">
-            <p className="text-xs font-medium text-white/50">All features in Business, plus:</p>
-            {["Dedicated support", "Onboarding services", "Design systems", "SCIM", "Publishing controls", "Sharing controls"].map((f) => (
+            <p className="text-xs font-medium text-white/50">{t("allFeaturesBusinessPlus")}</p>
+            {[t("dedicatedSupport"), t("onboardingServices"), t("designSystems"), t("scim"), t("publishingControls"), t("sharingControls")].map((f) => (
               <p key={f} className="flex items-center gap-2 text-xs text-white/40">
                 <span className="text-green-400">✓</span> {f}
               </p>
@@ -388,9 +400,10 @@ function PlansSettings() {
 // ── 4. Cloud & AI Balance ────────────────────────────────────────────
 
 function CloudSettings() {
+  const t = useTranslations("settings");
   return (
     <div>
-      <PageHeader title="Cloud & AI balance" subtitle="All plans include free monthly usage. For increased Cloud and AI usage, you can top up on paid plans." />
+      <PageHeader title={t("cloudAndAIBalance")} subtitle={t("cloudAndAIDesc")} />
 
       <div className="mt-8 grid grid-cols-2 gap-4">
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
@@ -399,32 +412,32 @@ function CloudSettings() {
               <Cloud className="h-5 w-5 text-white" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-white">Cloud + AI</p>
-              <p className="text-xs text-white/40">Monthly included usage resets 1 Mar 2026</p>
+              <p className="text-sm font-semibold text-white">{t("cloudAI")}</p>
+              <p className="text-xs text-white/40">{t("monthlyIncludedUsage")}</p>
             </div>
           </div>
-          <p className="mt-4 text-xs text-white/40">Upgrade to top up your balance ($0).</p>
+          <p className="mt-4 text-xs text-white/40">{t("upgradeToTopUp")}</p>
           <button className="mt-3 rounded-lg bg-white/10 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/15">
-            Upgrade plan
+            {t("upgradePlan")}
           </button>
         </div>
         <div className="space-y-3">
           <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] p-4">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-white">Cloud</span>
+              <span className="text-sm font-medium text-white">{t("cloud")}</span>
             </div>
             <div className="text-right">
               <p className="text-lg font-bold text-white">$0 / $25</p>
-              <p className="text-xs text-white/30">Free balance used</p>
+              <p className="text-xs text-white/30">{t("freeBalanceUsed")}</p>
             </div>
           </div>
           <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] p-4">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-white">AI</span>
+              <span className="text-sm font-medium text-white">{t("ai")}</span>
             </div>
             <div className="text-right">
               <p className="text-lg font-bold text-white">$0 / $1</p>
-              <p className="text-xs text-white/30">Free balance used</p>
+              <p className="text-xs text-white/30">{t("freeBalanceUsed")}</p>
             </div>
           </div>
         </div>
@@ -433,12 +446,12 @@ function CloudSettings() {
       <div className="mt-6">
         <SectionCard>
           <button className="flex w-full items-center justify-between p-5">
-            <span className="text-sm font-semibold text-white">Project breakdown</span>
+            <span className="text-sm font-semibold text-white">{t("projectBreakdown")}</span>
             <ChevronRight className="h-4 w-4 text-white/30" />
           </button>
         </SectionCard>
         <p className="mt-4 text-xs text-white/40">
-          This is a temporary offering until the beginning of 2026 as we refine our pricing model. <span className="text-violet-400 underline">Read more</span>
+          {t("temporaryOffering")} <span className="text-violet-400 underline">{t("readMore")}</span>
         </p>
       </div>
     </div>
@@ -448,6 +461,7 @@ function CloudSettings() {
 // ── 5. Privacy & Security ────────────────────────────────────────────
 
 function PrivacySettings() {
+  const t = useTranslations("settings");
   const [projectVisibility, setProjectVisibility] = useState("workspace");
   const [mcpServers, setMcpServers] = useState(true);
   const [dataCollection, setDataCollection] = useState(false);
@@ -457,83 +471,83 @@ function PrivacySettings() {
 
   return (
     <div>
-      <PageHeader title="Privacy & security" subtitle="Manage privacy and security settings for your workspace." />
+      <PageHeader title={t("privacyAndSecurity")} subtitle={t("privacyDesc")} />
       <div className="mt-8">
         <SectionCard>
           <div className="flex items-center justify-between p-6">
             <div>
-              <h3 className="text-sm font-semibold text-white">Default project visibility</h3>
-              <p className="mt-0.5 text-sm text-white/40">Choose whether new projects start as public, private (workspace-only), or drafts.</p>
+              <h3 className="text-sm font-semibold text-white">{t("defaultProjectVisibility")}</h3>
+              <p className="mt-0.5 text-sm text-white/40">{t("defaultProjectVisibilityDesc")}</p>
             </div>
             <button className="flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm text-white/60">
-              Workspace
+              {t("workspaceOnly")}
               <ArrowUpDown className="h-3.5 w-3.5" />
             </button>
           </div>
           <div className="flex items-center justify-between p-6">
             <div>
               <h3 className="text-sm font-semibold text-white">
-                Default website access <Badge label="Business" color="violet" />
+                {t("defaultWebsiteAccess")} <Badge label="Business" color="violet" />
               </h3>
-              <p className="mt-0.5 text-sm text-white/40">Choose if new published websites are public or only accessible to logged in workspace members.</p>
+              <p className="mt-0.5 text-sm text-white/40">{t("defaultWebsiteAccessDesc")}</p>
             </div>
             <button className="flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm text-white/60">
-              Anyone
+              {t("anyone")}
               <ArrowUpDown className="h-3.5 w-3.5" />
             </button>
           </div>
           <div className="flex items-center justify-between p-6">
             <div>
               <h3 className="text-sm font-semibold text-white">
-                MCP servers access <Badge label="Business" color="violet" />
+                {t("mcpServersAccess")} <Badge label="Business" color="violet" />
               </h3>
-              <p className="mt-0.5 text-sm text-white/40">Allow workspace members to use MCP servers.</p>
+              <p className="mt-0.5 text-sm text-white/40">{t("mcpServersDesc")}</p>
             </div>
             <ToggleSwitch enabled={mcpServers} onToggle={() => setMcpServers(!mcpServers)} />
           </div>
           <div className="flex items-center justify-between p-6">
             <div>
               <h3 className="text-sm font-semibold text-white">
-                Data collection opt out <Badge label="Business" color="violet" />
+                {t("dataCollectionOptOut")} <Badge label="Business" color="violet" />
               </h3>
-              <p className="mt-0.5 text-sm text-white/40">Opt out of data collection for this workspace.</p>
+              <p className="mt-0.5 text-sm text-white/40">{t("dataCollectionDesc")}</p>
             </div>
             <ToggleSwitch enabled={dataCollection} onToggle={() => setDataCollection(!dataCollection)} />
           </div>
           <div className="flex items-center justify-between p-6">
             <div>
               <h3 className="text-sm font-semibold text-white">
-                Restrict workspace invitations <Badge label="Enterprise" color="yellow" />
+                {t("restrictWorkspaceInvitations")} <Badge label="Enterprise" color="yellow" />
               </h3>
-              <p className="mt-0.5 text-sm text-white/40">When enabled, only admins and owners can invite members to this workspace.</p>
+              <p className="mt-0.5 text-sm text-white/40">{t("restrictWorkspaceInvitationsDesc")}</p>
             </div>
             <ToggleSwitch enabled={restrictInvitations} onToggle={() => setRestrictInvitations(!restrictInvitations)} />
           </div>
           <div className="flex items-center justify-between p-6">
             <div>
               <h3 className="text-sm font-semibold text-white">
-                Who can publish externally <Badge label="Enterprise" color="yellow" />
+                {t("whoCanPublishExternally")} <Badge label="Enterprise" color="yellow" />
               </h3>
-              <p className="mt-0.5 text-sm text-white/40">Control who can publish and deploy projects to the web.</p>
+              <p className="mt-0.5 text-sm text-white/40">{t("whoCanPublishDesc")}</p>
             </div>
             <button className="flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm text-white/60">
-              Editors and above
+              {t("editorsAndAbove")}
               <ArrowUpDown className="h-3.5 w-3.5" />
             </button>
           </div>
           <div className="flex items-center justify-between p-6">
             <div>
               <h3 className="text-sm font-semibold text-white">
-                Allow public preview links sharing <Badge label="Enterprise" color="yellow" />
+                {t("allowPublicPreviewLinks")} <Badge label="Enterprise" color="yellow" />
               </h3>
-              <p className="mt-0.5 text-sm text-white/40">When enabled, users can create temporary public preview links to their apps. When disabled, preview link creation is blocked.</p>
+              <p className="mt-0.5 text-sm text-white/40">{t("allowPublicPreviewDesc")}</p>
             </div>
             <ToggleSwitch enabled={publicPreview} onToggle={() => setPublicPreview(!publicPreview)} />
           </div>
           <div className="flex items-center justify-between p-6">
             <div>
-              <h3 className="text-sm font-semibold text-white">Cross-project sharing</h3>
-              <p className="mt-0.5 text-sm text-white/40">Allow projects in this workspace to read files from other projects.</p>
+              <h3 className="text-sm font-semibold text-white">{t("crossProjectSharing")}</h3>
+              <p className="mt-0.5 text-sm text-white/40">{t("crossProjectDesc")}</p>
             </div>
             <ToggleSwitch enabled={crossProject} onToggle={() => setCrossProject(!crossProject)} />
           </div>
@@ -546,6 +560,7 @@ function PrivacySettings() {
 // ── 6. Account Settings ──────────────────────────────────────────────
 
 function AccountSettings({ userName, userEmail }: { userName: string; userEmail: string }) {
+  const t = useTranslations("settings");
   const [chatSuggestions, setChatSuggestions] = useState(true);
   const [autoAccept, setAutoAccept] = useState(true);
   const [pushNotifications, setPushNotifications] = useState(false);
@@ -554,23 +569,23 @@ function AccountSettings({ userName, userEmail }: { userName: string; userEmail:
 
   return (
     <div>
-      <PageHeader title="Account settings" subtitle={`Personalize how others see and interact with you on AppMake.`} />
+      <PageHeader title={t("accountSettings")} subtitle={t("accountSettingsDesc")} />
 
       <div className="mt-8">
         <SectionCard>
           {/* Profile */}
           <div className="p-6">
-            <h3 className="text-sm font-semibold text-white">Profile</h3>
-            <p className="mt-0.5 text-sm text-white/40">Change name, location, avatar, and banner on your profile.</p>
+            <h3 className="text-sm font-semibold text-white">{t("name")}</h3>
+            <p className="mt-0.5 text-sm text-white/40">{t("profileDesc")}</p>
             <button className="mt-2 flex items-center gap-1 text-sm text-violet-400 transition-colors hover:text-violet-300">
-              Open profile on appmake.io/{username}
+              {t("openProfile")}{username}
               <ExternalLink className="h-3.5 w-3.5" />
             </button>
           </div>
           {/* Username */}
           <div className="p-6">
-            <h3 className="text-sm font-semibold text-white">Username</h3>
-            <p className="mt-0.5 text-sm text-white/40">Your public identifier and profile URL.</p>
+            <h3 className="text-sm font-semibold text-white">{t("username")}</h3>
+            <p className="mt-0.5 text-sm text-white/40">{t("usernameProfileDesc")}</p>
             <div className="mt-3 flex gap-2">
               <input
                 value={username}
@@ -578,14 +593,14 @@ function AccountSettings({ userName, userEmail }: { userName: string; userEmail:
                 className="flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition-colors focus:border-white/20"
               />
               <button className="rounded-lg bg-white/10 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/15">
-                Update
+                {t("update")}
               </button>
             </div>
           </div>
           {/* Email */}
           <div className="p-6">
-            <h3 className="text-sm font-semibold text-white">Email</h3>
-            <p className="mt-0.5 text-sm text-white/40">Your email address associated with your account.</p>
+            <h3 className="text-sm font-semibold text-white">{t("emailLabel")}</h3>
+            <p className="mt-0.5 text-sm text-white/40">{t("emailDesc")}</p>
             <div className="mt-3">
               <input
                 value={userEmail}
@@ -602,17 +617,17 @@ function AccountSettings({ userName, userEmail }: { userName: string; userEmail:
           {/* Chat suggestions */}
           <div className="flex items-center justify-between p-6">
             <div>
-              <h3 className="text-sm font-semibold text-white">Chat suggestions</h3>
-              <p className="mt-0.5 text-sm text-white/40">Show helpful suggestions in the chat interface to enhance your experience.</p>
+              <h3 className="text-sm font-semibold text-white">{t("chatSuggestions")}</h3>
+              <p className="mt-0.5 text-sm text-white/40">{t("chatSuggestionsDesc")}</p>
             </div>
             <ToggleSwitch enabled={chatSuggestions} onToggle={() => setChatSuggestions(!chatSuggestions)} />
           </div>
           {/* Generation complete sound */}
           <div className="p-6">
-            <h3 className="text-sm font-semibold text-white">Generation complete sound</h3>
-            <p className="mt-0.5 text-sm text-white/40">Plays a satisfying sound notification when a generation is finished.</p>
+            <h3 className="text-sm font-semibold text-white">{t("generationCompleteSound")}</h3>
+            <p className="mt-0.5 text-sm text-white/40">{t("generationSoundDesc")}</p>
             <div className="mt-3 space-y-2">
-              {([["first", "First generation", Volume2], ["always", "Always", Volume2], ["never", "Never", VolumeX]] as const).map(([val, label, Icon]) => (
+              {([{ val: "first" as const, label: t("firstGeneration"), Icon: Volume2 }, { val: "always" as const, label: t("always"), Icon: Volume2 }, { val: "never" as const, label: t("never"), Icon: VolumeX }]).map(({ val, label, Icon }) => (
                 <label key={val} className="flex cursor-pointer items-center gap-3">
                   <input
                     type="radio"
@@ -630,16 +645,16 @@ function AccountSettings({ userName, userEmail }: { userName: string; userEmail:
           {/* Auto-accept invitations */}
           <div className="flex items-center justify-between p-6">
             <div>
-              <h3 className="text-sm font-semibold text-white">Auto-accept invitations</h3>
-              <p className="mt-0.5 text-sm text-white/40">Automatically join workspaces and projects when invited instead of requiring manual acceptance.</p>
+              <h3 className="text-sm font-semibold text-white">{t("autoAcceptInvitations")}</h3>
+              <p className="mt-0.5 text-sm text-white/40">{t("autoAcceptDesc")}</p>
             </div>
             <ToggleSwitch enabled={autoAccept} onToggle={() => setAutoAccept(!autoAccept)} />
           </div>
           {/* Push notifications */}
           <div className="flex items-center justify-between p-6">
             <div>
-              <h3 className="text-sm font-semibold text-white">Push notifications</h3>
-              <p className="mt-0.5 text-sm text-white/40">Enable push notifications in the mobile app to customize these settings.</p>
+              <h3 className="text-sm font-semibold text-white">{t("pushNotifications")}</h3>
+              <p className="mt-0.5 text-sm text-white/40">{t("pushNotificationsDesc")}</p>
             </div>
             <ToggleSwitch enabled={pushNotifications} onToggle={() => setPushNotifications(!pushNotifications)} />
           </div>
@@ -650,15 +665,15 @@ function AccountSettings({ userName, userEmail }: { userName: string; userEmail:
       <div className="mt-6">
         <SectionCard>
           <div className="p-6">
-            <h3 className="text-sm font-semibold text-white">Linked accounts</h3>
-            <p className="mt-0.5 text-sm text-white/40">Manage accounts linked for sign-in.</p>
+            <h3 className="text-sm font-semibold text-white">{t("linkedAccounts")}</h3>
+            <p className="mt-0.5 text-sm text-white/40">{t("linkedAccountsDesc")}</p>
             <div className="mt-4 flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] p-4">
               <div className="flex items-center gap-3">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10">
                   <span className="text-sm">G</span>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-white">Google <Badge label="Primary" color="violet" /></p>
+                  <p className="text-sm font-medium text-white">{t("google")} <Badge label={t("primary")} color="violet" /></p>
                   <p className="text-xs text-white/40">{userEmail}</p>
                 </div>
               </div>
@@ -666,18 +681,18 @@ function AccountSettings({ userName, userEmail }: { userName: string; userEmail:
           </div>
           {/* Two-factor auth */}
           <div className="p-6">
-            <h3 className="text-sm font-semibold text-white">Two-factor authentication</h3>
-            <p className="mt-0.5 text-sm text-white/40">Secure your account with a one-time code via an authenticator app or SMS.</p>
+            <h3 className="text-sm font-semibold text-white">{t("twoFactorAuth")}</h3>
+            <p className="mt-0.5 text-sm text-white/40">{t("twoFactorDesc")}</p>
           </div>
           {/* Delete account */}
           <div className="flex items-center justify-between p-6">
             <div>
-              <h3 className="text-sm font-semibold text-white">Delete account</h3>
-              <p className="mt-0.5 text-sm text-white/40">Permanently delete your AppMake account. This cannot be undone.</p>
+              <h3 className="text-sm font-semibold text-white">{t("deleteAccount")}</h3>
+              <p className="mt-0.5 text-sm text-white/40">{t("deleteAccountDesc")}</p>
             </div>
             <button className="flex shrink-0 items-center gap-2 rounded-lg bg-red-500/10 px-4 py-2 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/20">
               <Trash2 className="h-4 w-4" />
-              Delete account
+              {t("deleteAccount")}
             </button>
           </div>
         </SectionCard>
@@ -689,17 +704,18 @@ function AccountSettings({ userName, userEmail }: { userName: string; userEmail:
 // ── 7. Labs ──────────────────────────────────────────────────────────
 
 function LabsSettings() {
+  const t = useTranslations("settings");
   const [gitBranch, setGitBranch] = useState(false);
 
   return (
     <div>
-      <PageHeader title="Labs" subtitle="These are experimental features, that might be modified or removed." />
+      <PageHeader title={t("labs")} subtitle={t("labsDesc")} />
       <div className="mt-8">
         <SectionCard>
           <div className="flex items-center justify-between p-6">
             <div>
-              <h3 className="text-sm font-semibold text-white">GitHub branch switching</h3>
-              <p className="mt-0.5 text-sm text-white/40">Select the branch to make edits to in your GitHub repository.</p>
+              <h3 className="text-sm font-semibold text-white">{t("githubBranch")}</h3>
+              <p className="mt-0.5 text-sm text-white/40">{t("githubBranchDesc")}</p>
             </div>
             <ToggleSwitch enabled={gitBranch} onToggle={() => setGitBranch(!gitBranch)} />
           </div>
@@ -871,14 +887,38 @@ const PERSONAL_CONNECTORS = [
 ];
 
 function ConnectorsSettings() {
+  const t = useTranslations("settings");
+  const tc = useTranslations("common");
+
+  const sharedConnectorDescs: Record<string, string> = {
+    Cloud: t("cloudConnector"),
+    AI: t("aiConnector"),
+    Shopify: t("shopifyConnector"),
+    Stripe: t("stripeConnector"),
+    ElevenLabs: t("elevenLabsConnector"),
+    Firecrawl: t("firecrawlConnector"),
+    Perplexity: t("perplexityConnector"),
+    Slack: t("slackConnector"),
+    Supabase: t("supabaseConnector"),
+  };
+
+  const personalConnectorDescs: Record<string, string> = {
+    Amplitude: t("amplitudeConnector"),
+    Atlassian: t("atlassianConnector"),
+    Granola: t("granolaConnector"),
+    Linear: t("linearConnector"),
+    GitHub: t("githubConnector"),
+    "New MCP server": t("newMcpServer"),
+  };
+
   return (
     <div>
-      <PageHeader title="Connectors" subtitle="Extend your apps with powerful integrations and services." />
+      <PageHeader title={t("connectors")} subtitle={t("connectorsDesc")} />
 
       <div className="mt-6">
         <div className="flex items-center gap-2.5 rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5">
           <Search className="h-4 w-4 text-white/25" />
-          <input placeholder="Search connectors..." className="flex-1 bg-transparent text-sm text-white placeholder-white/25 outline-none" />
+          <input placeholder={t("searchConnectors")} className="flex-1 bg-transparent text-sm text-white placeholder-white/25 outline-none" />
         </div>
       </div>
 
@@ -886,11 +926,11 @@ function ConnectorsSettings() {
       <div className="mt-8">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-[15px] font-semibold text-white">Shared connectors</h3>
-            <p className="mt-1 text-[13px] text-white/35">Add functionality to your apps. Configured once by admins, available to everyone in your workspace.</p>
+            <h3 className="text-[15px] font-semibold text-white">{t("sharedConnectors")}</h3>
+            <p className="mt-1 text-[13px] text-white/35">{t("sharedConnectorsDesc")}</p>
           </div>
           <button className="flex items-center gap-1 text-[13px] font-medium text-white/35 transition-colors hover:text-white/60">
-            View all <ChevronRight className="h-3.5 w-3.5" />
+            {t("viewAll")} <ChevronRight className="h-3.5 w-3.5" />
           </button>
         </div>
         <div className="mt-4 grid grid-cols-3 gap-3">
@@ -903,12 +943,12 @@ function ConnectorsSettings() {
                 <ConnectorLogo name={c.name} />
                 {c.enabled && (
                   <span className="rounded-full bg-green-500/10 px-2.5 py-0.5 text-[11px] font-medium text-green-400">
-                    Enabled
+                    {t("enabled")}
                   </span>
                 )}
               </div>
               <h4 className="mt-4 text-[14px] font-semibold text-white">{c.name}</h4>
-              <p className="mt-1 text-[12px] leading-relaxed text-white/35">{c.desc}</p>
+              <p className="mt-1 text-[12px] leading-relaxed text-white/35">{sharedConnectorDescs[c.name] ?? c.desc}</p>
             </div>
           ))}
         </div>
@@ -918,11 +958,11 @@ function ConnectorsSettings() {
       <div className="mt-10">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-[15px] font-semibold text-white">Personal connectors</h3>
-            <p className="mt-1 text-[13px] text-white/35">Add connectors that add context while you build. <span className="cursor-pointer text-violet-400 transition-colors hover:text-violet-300">Read more</span></p>
+            <h3 className="text-[15px] font-semibold text-white">{t("personalConnectors")}</h3>
+            <p className="mt-1 text-[13px] text-white/35">{t("personalConnectorsDesc")} <span className="cursor-pointer text-violet-400 transition-colors hover:text-violet-300">{t("readMore")}</span></p>
           </div>
           <button className="flex items-center gap-1 text-[13px] font-medium text-white/35 transition-colors hover:text-white/60">
-            View all <ChevronRight className="h-3.5 w-3.5" />
+            {t("viewAll")} <ChevronRight className="h-3.5 w-3.5" />
           </button>
         </div>
         <div className="mt-4 grid grid-cols-3 gap-3">
@@ -933,7 +973,7 @@ function ConnectorsSettings() {
             >
               <ConnectorLogo name={c.name} />
               <h4 className="mt-4 text-[14px] font-semibold text-white">{c.name}</h4>
-              <p className="mt-1 text-[12px] leading-relaxed text-white/35">{c.desc}</p>
+              <p className="mt-1 text-[12px] leading-relaxed text-white/35">{personalConnectorDescs[c.name] ?? c.desc}</p>
             </div>
           ))}
         </div>
@@ -943,11 +983,11 @@ function ConnectorsSettings() {
       <div className="mt-10 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-[14px] font-semibold text-white">Missing an integration?</h3>
-            <p className="mt-1 text-[13px] text-white/35">Request new integrations or support the ones you care about.</p>
+            <h3 className="text-[14px] font-semibold text-white">{t("missingIntegration")}</h3>
+            <p className="mt-1 text-[13px] text-white/35">{t("missingIntegrationDesc")}</p>
           </div>
           <button className="rounded-xl bg-white/10 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-white/15">
-            Request
+            {tc("request")}
           </button>
         </div>
       </div>
@@ -958,22 +998,80 @@ function ConnectorsSettings() {
 // ── 9. GitHub ────────────────────────────────────────────────────────
 
 function GitHubSettings() {
+  const t = useTranslations("settings");
   return (
     <div>
-      <PageHeader title="GitHub" subtitle="Sync your project 2-way with GitHub to collaborate at source." />
+      <PageHeader title={t("github")} subtitle={t("githubPageDesc")} />
       <div className="mt-8">
         <SectionCard>
           <div className="flex items-center justify-between p-6">
             <div>
               <h3 className="text-sm font-semibold text-white">
-                Connected account <Badge label="Admin" color="yellow" />
+                {t("connectedAccount")} <Badge label={t("admin")} color="yellow" />
               </h3>
-              <p className="mt-0.5 text-sm text-white/40">Add your GitHub account to manage connected organizations.</p>
+              <p className="mt-0.5 text-sm text-white/40">{t("connectedAccountDesc")}</p>
             </div>
             <button className="flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/5">
               <Github className="h-4 w-4" />
-              Connect GitHub
+              {t("connectGithub")}
             </button>
+          </div>
+        </SectionCard>
+      </div>
+    </div>
+  );
+}
+
+// ── Language Settings ─────────────────────────────────────────────────
+
+function LanguageSettings() {
+  const t = useTranslations("settings");
+  const locales = [
+    { code: "da", name: "Dansk", flag: "🇩🇰" },
+    { code: "sv", name: "Svenska", flag: "🇸🇪" },
+    { code: "en", name: "English", flag: "🇬🇧" },
+    { code: "es", name: "Español", flag: "🇪🇸" },
+    { code: "zh", name: "中文", flag: "🇨🇳" },
+    { code: "ar", name: "العربية", flag: "🇸🇦" },
+  ];
+
+  const currentLocale = document.cookie
+    .split("; ")
+    .find((row) => row.startsWith("NEXT_LOCALE="))
+    ?.split("=")[1] || "da";
+
+  function setLocale(code: string) {
+    document.cookie = `NEXT_LOCALE=${code};path=/;max-age=31536000`;
+    window.location.reload();
+  }
+
+  return (
+    <div>
+      <PageHeader title={t("language")} subtitle={t("languageDesc")} />
+      <div className="mt-8">
+        <SectionCard>
+          <div className="p-6">
+            <h3 className="text-sm font-semibold text-white">Interface language</h3>
+            <p className="mt-0.5 text-sm text-white/40">Select the language for buttons, labels, and menus.</p>
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              {locales.map((locale) => (
+                <button
+                  key={locale.code}
+                  onClick={() => setLocale(locale.code)}
+                  className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-left transition-all ${
+                    currentLocale === locale.code
+                      ? "border-violet-500 bg-violet-500/10 text-white"
+                      : "border-white/10 text-white/60 hover:border-white/20 hover:bg-white/5 hover:text-white/80"
+                  }`}
+                >
+                  <span className="text-xl">{locale.flag}</span>
+                  <span className="text-sm font-medium">{locale.name}</span>
+                  {currentLocale === locale.code && (
+                    <span className="ml-auto text-xs text-violet-400">✓</span>
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
         </SectionCard>
       </div>
@@ -984,6 +1082,7 @@ function GitHubSettings() {
 // ── Main Page ────────────────────────────────────────────────────────
 
 export default function SettingsPage() {
+  const t = useTranslations("settings");
   const { data: session } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -994,6 +1093,22 @@ export default function SettingsPage() {
   const userName = session.user?.name?.split(" ")[0] || "User";
   const fullName = session.user?.name || "User";
   const userEmail = session.user?.email || "";
+
+  const sidebarLabels: Record<string, string> = {
+    people: t("people"),
+    plans: t("plansAndCredits"),
+    cloud: t("cloudAndAIBalance"),
+    privacy: t("privacyAndSecurity"),
+    account: fullName,
+    labs: t("labs"),
+    "ai-settings": "AI Settings",
+    "editor-settings": "Editor",
+    language: t("language"),
+    notifications: "Notifications",
+    "api-keys": "API Keys",
+    connectors: t("connectors"),
+    github: t("github"),
+  };
 
   function renderTab() {
     switch (activeTab) {
@@ -1006,6 +1121,7 @@ export default function SettingsPage() {
       case "labs": return <LabsSettings />;
       case "ai-settings": return <AISettingsPanel />;
       case "editor-settings": return <EditorSettingsPanel />;
+      case "language": return <LanguageSettings />;
       case "notifications": return <NotificationSettingsPanel />;
       case "api-keys": return <APIKeySettingsPanel />;
       case "connectors": return <ConnectorsSettings />;
@@ -1023,11 +1139,11 @@ export default function SettingsPage() {
           className="flex items-center gap-2 px-4 pt-5 pb-4 text-sm text-white/50 transition-colors hover:text-white/70"
         >
           <ArrowLeft className="h-4 w-4" />
-          Go back
+          {t("goBack")}
         </button>
 
         <div className="flex-1 overflow-y-auto px-3">
-          <p className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-wider text-white/30">Workspace</p>
+          <p className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-wider text-white/30">{t("workspace")}</p>
           {WORKSPACE_ITEMS.map((item) => (
             <button
               key={item.id}
@@ -1043,11 +1159,11 @@ export default function SettingsPage() {
               ) : item.icon ? (
                 <item.icon className="h-4 w-4 shrink-0" />
               ) : null}
-              <span>{item.id === "workspace" ? `${userName}'s AppMake` : item.label}</span>
+              <span>{item.id === "workspace" ? `${userName}'s AppMake` : (sidebarLabels[item.id] ?? item.label)}</span>
             </button>
           ))}
 
-          <p className="mb-1 mt-5 px-3 text-[11px] font-semibold uppercase tracking-wider text-white/30">Account</p>
+          <p className="mb-1 mt-5 px-3 text-[11px] font-semibold uppercase tracking-wider text-white/30">{t("accountSettings")}</p>
           {ACCOUNT_ITEMS.map((item) => (
             <button
               key={item.id}
@@ -1057,11 +1173,11 @@ export default function SettingsPage() {
               }`}
             >
               <item.icon className="h-4 w-4 shrink-0" />
-              <span>{item.id === "account" ? fullName : item.label}</span>
+              <span>{sidebarLabels[item.id] ?? item.label}</span>
             </button>
           ))}
 
-          <p className="mb-1 mt-5 px-3 text-[11px] font-semibold uppercase tracking-wider text-white/30">Preferences</p>
+          <p className="mb-1 mt-5 px-3 text-[11px] font-semibold uppercase tracking-wider text-white/30">{t("preferences")}</p>
           {PREFERENCES_ITEMS.map((item) => (
             <button
               key={item.id}
@@ -1071,11 +1187,11 @@ export default function SettingsPage() {
               }`}
             >
               <item.icon className="h-4 w-4 shrink-0" />
-              <span>{item.label}</span>
+              <span>{sidebarLabels[item.id] ?? item.label}</span>
             </button>
           ))}
 
-          <p className="mb-1 mt-5 px-3 text-[11px] font-semibold uppercase tracking-wider text-white/30">Connectors</p>
+          <p className="mb-1 mt-5 px-3 text-[11px] font-semibold uppercase tracking-wider text-white/30">{t("connectors")}</p>
           {CONNECTOR_ITEMS.map((item) => (
             <button
               key={item.id}
@@ -1085,7 +1201,7 @@ export default function SettingsPage() {
               }`}
             >
               <item.icon className="h-4 w-4 shrink-0" />
-              <span>{item.label}</span>
+              <span>{sidebarLabels[item.id] ?? item.label}</span>
             </button>
           ))}
         </div>

@@ -2,6 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Menu } from "lucide-react";
 import { MeshGradientBackground } from "@/components/dashboard/MeshGradientBackground";
@@ -20,6 +21,7 @@ interface Project {
 
 export default function DashboardPage() {
   const { data: session } = useSession();
+  const t = useTranslations("dashboard");
   const [projects, setProjects] = useState<Project[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedIdea, setSelectedIdea] = useState<string | null>(null);
@@ -29,7 +31,7 @@ export default function DashboardPage() {
       fetch("/api/projects")
         .then((r) => r.json())
         .then((data) => setProjects(data ?? []))
-        .catch(() => toast.error("Failed to load projects"));
+        .catch(() => toast.error(t("noProjectsFound")));
     }
   }, [session]);
 

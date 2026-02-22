@@ -3,6 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import {
   Menu,
@@ -48,13 +49,15 @@ function timeAgo(dateStr: string): string {
   return `${months} month${months > 1 ? "s" : ""} ago`;
 }
 
-const SORT_OPTIONS: { key: SortKey; label: string }[] = [
-  { key: "updatedAt", label: "Last edited" },
-  { key: "createdAt", label: "Created" },
-  { key: "name", label: "Name" },
+const SORT_OPTIONS: { key: SortKey; labelKey: string }[] = [
+  { key: "updatedAt", labelKey: "lastEdited" },
+  { key: "createdAt", labelKey: "createdDate" },
+  { key: "name", labelKey: "nameSort" },
 ];
 
 export default function ProjectsPage() {
+  const t = useTranslations("projects");
+  const tc = useTranslations("common");
   const { data: session } = useSession();
   const router = useRouter();
   const [projects, setProjects] = useState<Project[]>([]);
@@ -79,7 +82,7 @@ export default function ProjectsPage() {
       fetch("/api/projects")
         .then((r) => r.json())
         .then((data) => setProjects(data ?? []))
-        .catch(() => toast.error("Failed to load projects"))
+        .catch(() => toast.error(t("failedToLoadProjects")))
         .finally(() => setLoading(false));
     }
   }, [session]);
@@ -139,7 +142,7 @@ export default function ProjectsPage() {
       const { project, chatId } = await res.json();
       router.push(`/chat/${project.id}`);
     } catch {
-      toast.error("Failed to create project");
+      toast.error(t("failedToCreateProject"));
       setCreating(false);
     }
   }
@@ -156,7 +159,7 @@ export default function ProjectsPage() {
         prev.map((p) => (p.id === projectId ? { ...p, starred } : p))
       );
     } catch {
-      toast.error("Failed to update star");
+      toast.error(t("failedToUpdateStar"));
     }
   }
 
@@ -177,9 +180,9 @@ export default function ProjectsPage() {
       setProjects((prev) => prev.filter((p) => !selectedIds.has(p.id)));
       setSelectedIds(new Set());
       setDeleteConfirmOpen(false);
-      toast.success(`${ids.length} project${ids.length > 1 ? "s" : ""} deleted`);
+      toast.success(t("projectDeleted", { count: ids.length }));
     } catch {
-      toast.error("Failed to delete projects");
+      toast.error(t("failedToDeleteProjects"));
     } finally {
       setDeleting(false);
     }
@@ -216,7 +219,7 @@ export default function ProjectsPage() {
           <div className="flex-1 overflow-y-auto px-6 py-8 md:px-10">
             {/* Header */}
             <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              <h1 className="text-2xl font-bold text-white">Projects</h1>
+              <h1 className="text-2xl font-bold text-white">{t("projectsPage")}</h1>
 
               <div className="flex flex-wrap items-center gap-3">
                 {/* Search */}
@@ -225,7 +228,7 @@ export default function ProjectsPage() {
                   <input
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search projects..."
+                    placeholder={t("searchProjects")}
                     className="h-9 w-60 rounded-lg border border-white/10 bg-white/5 pl-9 pr-3 text-sm text-white placeholder-white/30 outline-none transition-colors focus:border-white/20 focus:bg-white/[0.08]"
                   />
                   {search && (
@@ -244,7 +247,7 @@ export default function ProjectsPage() {
                     onClick={() => setSortDropdownOpen(!sortDropdownOpen)}
                     className="flex h-9 items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white/70 transition-colors hover:bg-white/[0.08]"
                   >
-                    {SORT_OPTIONS.find((o) => o.key === sortKey)?.label}
+                    {t(SORT_OPTIONS.find((o) => o.key === sortKey)?.labelKey ?? "lastEdited")}
                     <ChevronDown className="h-3.5 w-3.5 text-white/40" />
                   </button>
                   {sortDropdownOpen && (
@@ -268,16 +271,16 @@ export default function ProjectsPage() {
                             }}
                             className="flex w-full items-center justify-between px-3 py-2 text-sm text-white/70 transition-colors hover:bg-white/5"
                           >
-                            <span>{opt.label}</span>
+                            <span>{t(opt.labelKey)}</span>
                             {sortKey === opt.key && (
                               <span className="text-xs text-white/40">
                                 {sortDir === "desc"
                                   ? opt.key === "name"
-                                    ? "Z-A"
-                                    : "Newest first"
+                                    ? t("zA")
+                                    : t("newestFirst")
                                   : opt.key === "name"
-                                    ? "A-Z"
-                                    : "Oldest first"}
+                                    ? t("aZ")
+                                    : t("oldestFirst")}
                               </span>
                             )}
                           </button>
@@ -420,13 +423,13 @@ export default function ProjectsPage() {
                   className="text-xl font-semibold text-white/80"
                   style={{ animation: "fadeInUp 600ms ease-out 600ms both" }}
                 >
-                  Start building something amazing
+                  {t("startBuildingSomethingAmazing")}
                 </h2>
                 <p
                   className="mt-2 max-w-md text-center text-sm text-white/40"
                   style={{ animation: "fadeInUp 600ms ease-out 700ms both" }}
                 >
-                  Create your first project and let AI help you build it. From landing pages to full-stack apps, the possibilities are endless.
+                  {t("createFirstProjectDesc")}
                 </p>
                 <button
                   onClick={handleCreateProject}
@@ -439,7 +442,7 @@ export default function ProjectsPage() {
                   ) : (
                     <Plus className="h-4 w-4" />
                   )}
-                  Create your first project
+                  {t("createFirstProject")}
                 </button>
               </div>
             ) : viewMode === "grid" ? (
@@ -459,7 +462,7 @@ export default function ProjectsPage() {
                         <Plus className="h-6 w-6 text-white/40 group-hover:text-white/60" />
                       </div>
                       <span className="text-sm font-medium text-white/40 group-hover:text-white/60">
-                        Create new project
+                        {t("createNewProject")}
                       </span>
                     </>
                   )}
@@ -544,7 +547,7 @@ export default function ProjectsPage() {
                           {project.name}
                         </p>
                         <p className="text-[11px] text-white/30">
-                          Edited {timeAgo(project.updatedAt)}
+                          {t("edited")} {timeAgo(project.updatedAt)}
                         </p>
                       </div>
                     </div>
@@ -564,13 +567,13 @@ export default function ProjectsPage() {
                         <span className="sr-only">Thumbnail</span>
                       </th>
                       <th className="px-3 py-3 text-left text-xs font-medium text-white/40">
-                        Name
+                        {t("name")}
                       </th>
                       <th className="hidden px-3 py-3 text-left text-xs font-medium text-white/40 md:table-cell">
-                        Created at
+                        {t("createdAt")}
                       </th>
                       <th className="hidden px-3 py-3 text-left text-xs font-medium text-white/40 sm:table-cell">
-                        Created by
+                        {t("createdBy")}
                       </th>
                       <th className="w-10 px-3 py-3">
                         <span className="sr-only">Star</span>
@@ -621,7 +624,7 @@ export default function ProjectsPage() {
                             {project.name}
                           </p>
                           <p className="text-xs text-white/30">
-                            Edited {timeAgo(project.updatedAt)}
+                            {t("edited")} {timeAgo(project.updatedAt)}
                           </p>
                         </td>
                         <td className="hidden px-3 py-3 text-sm text-white/40 md:table-cell">
@@ -658,7 +661,7 @@ export default function ProjectsPage() {
 
                 {filtered.length === 0 && (
                   <div className="py-12 text-center text-sm text-white/30">
-                    No projects found
+                    {t("noProjectsFound")}
                   </div>
                 )}
               </div>
@@ -670,7 +673,7 @@ export default function ProjectsPage() {
               filtered.length === 0 &&
               search && (
                 <div className="py-12 text-center text-sm text-white/30">
-                  No projects match &ldquo;{search}&rdquo;
+                  {t("noProjectsMatch")} &ldquo;{search}&rdquo;
                 </div>
               )}
           </div>
@@ -681,13 +684,13 @@ export default function ProjectsPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <span className="text-sm font-medium text-white">
-                    {selectedIds.size} selected
+                    {selectedIds.size} {t("selected")}
                   </span>
                   <button
                     onClick={selectAll}
                     className="text-sm text-violet-400 transition-colors hover:text-violet-300"
                   >
-                    Select all ({filtered.length})
+                    {t("selectAll")} ({filtered.length})
                   </button>
                 </div>
                 <div className="flex items-center gap-2">
@@ -696,13 +699,13 @@ export default function ProjectsPage() {
                     className="flex items-center gap-1.5 rounded-lg bg-red-500/10 px-3 py-1.5 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/20"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
-                    Delete
+                    {t("deleteSelected")}
                   </button>
                   <button
                     onClick={cancelSelection}
                     className="rounded-lg px-3 py-1.5 text-sm font-medium text-white/60 transition-colors hover:bg-white/5 hover:text-white"
                   >
-                    Cancel
+                    {t("cancelSelection")}
                   </button>
                 </div>
               </div>
@@ -724,10 +727,10 @@ export default function ProjectsPage() {
                   <Trash2 className="h-6 w-6 text-red-400" />
                 </div>
                 <h3 className="mt-4 text-lg font-semibold text-white">
-                  Delete {selectedIds.size} project{selectedIds.size > 1 ? "s" : ""}?
+                  {t("deleteProjectConfirm", { count: selectedIds.size })}
                 </h3>
                 <p className="mt-2 text-sm text-white/50">
-                  This action cannot be undone. All project data including chats, files, and deployments will be permanently deleted.
+                  {t("deleteConfirmMessage")}
                 </p>
                 <div className="mt-6 flex gap-3">
                   <button
@@ -735,7 +738,7 @@ export default function ProjectsPage() {
                     disabled={deleting}
                     className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-white/10"
                   >
-                    Cancel
+                    {tc("cancel")}
                   </button>
                   <button
                     onClick={handleDeleteSelected}
@@ -745,7 +748,7 @@ export default function ProjectsPage() {
                     {deleting ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      "Delete"
+                      tc("delete")
                     )}
                   </button>
                 </div>
