@@ -88,6 +88,14 @@ function getLoader(path: string): "tsx" | "ts" | "jsx" | "js" | "css" | "json" {
 
 const EXTENSIONS = ["", ".tsx", ".ts", ".jsx", ".js", ".json"];
 
+/** Asset extensions that can't be bundled as code — return a placeholder */
+const ASSET_EXTENSIONS = [
+  ".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".avif", ".ico",
+  ".mp4", ".webm", ".ogg", ".mp3", ".wav",
+  ".woff", ".woff2", ".ttf", ".eot",
+  ".pdf",
+];
+
 /** Try to find a file in the map, with extension and /index fallbacks */
 function resolveInMap(
   name: string,
@@ -337,7 +345,12 @@ createRoot(document.getElementById("root")).render(<App />);
                 }
               }
 
-              // 3. Bare npm specifier → external
+              // 3. Asset file (image, font, video, etc.) → virtual placeholder
+              if (ASSET_EXTENSIONS.some((ext) => raw.toLowerCase().endsWith(ext))) {
+                return { path: raw, namespace: "asset" };
+              }
+
+              // 4. Bare npm specifier → external
               if (isBareSpecifier(raw)) {
                 let pkgName = raw;
                 if (raw.startsWith("@")) {
@@ -350,8 +363,27 @@ createRoot(document.getElementById("root")).render(<App />);
                 return { path: raw, external: true };
               }
 
-              // 4. Fallback
+              // 5. Fallback
               return { path: raw, external: true };
+            });
+
+            // Asset loader — returns a placeholder SVG data URL for images,
+            // empty string for other asset types
+            build.onLoad({ filter: /.*/, namespace: "asset" }, (args) => {
+              const p = args.path.toLowerCase();
+              let placeholder: string;
+              if (p.endsWith(".svg")) {
+                placeholder = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect width='200' height='200' fill='%23374151'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%239CA3AF' font-size='14'%3E${encodeURIComponent(args.path.split("/").pop() ?? "image")}%3C/text%3E%3C/svg%3E`;
+              } else if (ASSET_EXTENSIONS.slice(0, 8).some((ext) => p.endsWith(ext))) {
+                // Image placeholder — 1x1 transparent PNG
+                placeholder = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPj/HwADBwIAMCbHYQAAAABJRU5ErkJggg==";
+              } else {
+                placeholder = "";
+              }
+              return {
+                contents: `export default "${placeholder}";`,
+                loader: "js",
+              };
             });
 
             build.onLoad({ filter: /.*/, namespace: "virtual" }, (args) => {
