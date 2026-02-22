@@ -31,6 +31,15 @@ export function usePreviewBundler(): UsePreviewBundlerResult {
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const versionRef = useRef(0);
+  const autoFixAttemptedRef = useRef(false);
+
+  // Reset auto-fix flag when streaming starts (new generation)
+  const isStreamingForReset = useChatStore((s) => s.isStreaming);
+  useEffect(() => {
+    if (isStreamingForReset) {
+      autoFixAttemptedRef.current = false;
+    }
+  }, [isStreamingForReset]);
 
   const doBuild = useCallback(async () => {
     const files = useEditorStore.getState().generatedFiles;
@@ -63,6 +72,22 @@ export function usePreviewBundler(): UsePreviewBundlerResult {
         setStatus("error");
         setLocalErrors(result.errors);
         setErrors(result.errors);
+
+        // Auto-fix: send build errors to AI if not streaming
+        const streaming = useChatStore.getState().isStreaming;
+        if (!streaming && !autoFixAttemptedRef.current) {
+          autoFixAttemptedRef.current = true;
+          const errorText = result.errors.map((e) => e.text).join("\n");
+          setTimeout(() => {
+            window.dispatchEvent(
+              new CustomEvent("appmake:auto-fix", {
+                detail: {
+                  prompt: `The preview has a build error that needs to be fixed:\n\n\`${errorText}\`\n\nPlease fix this error in the code.`,
+                },
+              })
+            );
+          }, 1500);
+        }
         return;
       }
 
@@ -91,6 +116,21 @@ export function usePreviewBundler(): UsePreviewBundlerResult {
       setStatus("error");
       setLocalErrors([{ text: errorMsg }]);
       setErrors([{ text: errorMsg }]);
+
+      // Auto-fix: send build crash to AI if not streaming
+      const streaming = useChatStore.getState().isStreaming;
+      if (!streaming && !autoFixAttemptedRef.current) {
+        autoFixAttemptedRef.current = true;
+        setTimeout(() => {
+          window.dispatchEvent(
+            new CustomEvent("appmake:auto-fix", {
+              detail: {
+                prompt: `The preview has a build error that needs to be fixed:\n\n\`${errorMsg}\`\n\nPlease fix this error in the code.`,
+              },
+            })
+          );
+        }, 1500);
+      }
     }
   }, [setStatus, setErrors, setLastBundleTime]);
 
