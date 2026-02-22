@@ -243,7 +243,7 @@ export const generateImageTool = tool({
     }
 
     try {
-      const res = await fetch("https://api.replicate.com/v1/predictions", {
+      const res = await fetch("https://api.replicate.com/v1/models/black-forest-labs/flux-schnell/predictions", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${apiToken}`,
@@ -251,7 +251,6 @@ export const generateImageTool = tool({
           Prefer: "wait",
         },
         body: JSON.stringify({
-          model: "black-forest-labs/flux-schnell",
           input: {
             prompt,
             aspect_ratio,
