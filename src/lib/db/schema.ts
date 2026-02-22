@@ -157,6 +157,31 @@ export const shares = pgTable("shares", {
   expiresAt: timestamp("expires_at", { mode: "date" }),
 });
 
+// ─── Generations (Background AI Streaming) ──────────────────────────
+
+export const generations = pgTable("generations", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  chatId: uuid("chat_id")
+    .notNull()
+    .references(() => chats.id, { onDelete: "cascade" }),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  projectId: uuid("project_id")
+    .notNull()
+    .references(() => projects.id, { onDelete: "cascade" }),
+  status: text("status")
+    .$type<"streaming" | "completed" | "error" | "cancelled">()
+    .notNull()
+    .default("streaming"),
+  content: text("content").notNull().default(""),
+  error: text("error"),
+  modelId: text("model_id").notNull(),
+  provider: text("provider").notNull(),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  completedAt: timestamp("completed_at", { mode: "date" }),
+});
+
 // ─── Templates ──────────────────────────────────────────────────────
 
 export const templates = pgTable("templates", {

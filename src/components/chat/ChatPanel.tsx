@@ -74,15 +74,154 @@ export function ChatPanel({ chatId, projectId, initialMessages = [] }: ChatPanel
   const [resolvedPlans, setResolvedPlans] = useState<Record<string, "approved" | "rejected">>({});
   const [liveCard, setLiveCard] = useState<UpdateCard | undefined>(undefined);
   const [usageRefreshKey, setUsageRefreshKey] = useState(0);
-  const abortRef = useRef<AbortController | null>(null);
   const { planMode } = useBuilderStore();
   const streamingParserRef = useRef<MessageParser | null>(null);
   const subtaskCounterRef = useRef(0);
+  const activeGenerationIdRef = useRef<string | null>(null);
+  const eventSourceRef = useRef<EventSource | null>(null);
+  const fullContentRef = useRef("");
 
   // Initialize messages from props
   if (messages.length === 0 && initialMessages.length > 0) {
     setMessages(initialMessages);
   }
+
+  // ── SSE Connection Helper ──────────────────────────────────────────
+
+  const connectToGeneration = useCallback(
+    (
+      generationId: string,
+      fromChunk: number,
+      options?: {
+        previousFiles?: Record<string, string>;
+        currentCardRef?: { current: UpdateCard | null };
+        streamingParser?: MessageParser;
+      }
+    ) => {
+      // Close any existing connection
+      eventSourceRef.current?.close();
+
+      activeGenerationIdRef.current = generationId;
+      const updateCardStore = useUpdateCardStore.getState();
+
+      // Create a streaming parser if not provided (reconnect case)
+      const parser =
+        options?.streamingParser ??
+        createStreamingParser(
+          options?.previousFiles ?? { ...useEditorStore.getState().generatedFiles },
+          options?.currentCardRef ?? { current: null },
+          updateCardStore,
+          subtaskCounterRef,
+          setLiveCard
+        );
+      streamingParserRef.current = parser;
+
+      const es = new EventSource(
+        `/api/generations/${generationId}/stream?from=${fromChunk}`
+      );
+      eventSourceRef.current = es;
+
+      es.addEventListener("chunk", (e) => {
+        const { text } = JSON.parse(e.data);
+        fullContentRef.current += text;
+        setStreamingContent(fullContentRef.current);
+        parser.push(text);
+      });
+
+      es.addEventListener("catchup", (e) => {
+        const { content, status } = JSON.parse(e.data);
+        fullContentRef.current = content;
+        setStreamingContent(content);
+        // Re-parse entire content for file extraction
+        extractAndOpenFiles(content);
+        if (status !== "streaming") {
+          finalize(content);
+          es.close();
+        }
+      });
+
+      es.addEventListener("done", () => {
+        es.close();
+        finalize(fullContentRef.current);
+      });
+
+      es.addEventListener("error", () => {
+        es.close();
+        finalize(fullContentRef.current);
+      });
+
+      function finalize(content: string) {
+        eventSourceRef.current = null;
+        activeGenerationIdRef.current = null;
+
+        parser.end();
+
+        if (content.trim()) {
+          const assistantMessage: ChatMessage = {
+            id: uuid(),
+            chatId,
+            role: "assistant",
+            content,
+            createdAt: new Date(),
+          };
+          addMessage(assistantMessage);
+
+          // Safety-net file extraction
+          extractAndOpenFiles(content);
+        }
+
+        setIsStreaming(false);
+        setStreamingContent("");
+        setLiveCard(undefined);
+        streamingParserRef.current = null;
+        updateCardStore.stopThinking();
+        updateCardStore.setCurrentStreamingFile(null);
+        updateCardStore.endSession();
+        setUsageRefreshKey((k) => k + 1);
+      }
+    },
+    [chatId, addMessage, setIsStreaming]
+  );
+
+  // ── Reconnect on page load ─────────────────────────────────────────
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetch(`/api/generations/active?chatId=${chatId}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled) return;
+
+        if (data.generationId && data.status === "streaming") {
+          // Active generation found — reconnect
+          setIsStreaming(true);
+          fullContentRef.current = "";
+          const updateCardStore = useUpdateCardStore.getState();
+          updateCardStore.startSession();
+          updateCardStore.startThinking();
+          connectToGeneration(data.generationId, 0);
+        } else if (data.partialContent) {
+          // Server restarted — show partial content as message
+          const msg: ChatMessage = {
+            id: uuid(),
+            chatId,
+            role: "assistant",
+            content: data.partialContent,
+            createdAt: new Date(),
+          };
+          addMessage(msg);
+          extractAndOpenFiles(data.partialContent);
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [chatId, connectToGeneration, setIsStreaming, addMessage]);
+
+  // ── handleSend ─────────────────────────────────────────────────────
 
   const handleSend = useCallback(
     async (content: string, images?: UploadedImage[]) => {
@@ -105,6 +244,7 @@ export function ChatPanel({ chatId, projectId, initialMessages = [] }: ChatPanel
       setIsStreaming(true);
       setStreamingContent("");
       setLiveCard(undefined);
+      fullContentRef.current = "";
 
       const updateCardStore = useUpdateCardStore.getState();
       updateCardStore.startSession();
@@ -115,119 +255,17 @@ export function ChatPanel({ chatId, projectId, initialMessages = [] }: ChatPanel
       // Capture previous files for revert
       const previousFiles = { ...useEditorStore.getState().generatedFiles };
 
-      const abortController = new AbortController();
-      abortRef.current = abortController;
-
       // Current live card being built during streaming
       const currentCardRef: { current: UpdateCard | null } = { current: null };
 
       // Create streaming parser for real-time updates
-      const streamingParser = new MessageParser({
-        onToolActivity: (activity) => {
-          if (activity.status === "calling") {
-            updateCardStore.setSessionPhase("researching");
-            updateCardStore.incrementToolCalls();
-          }
-        },
-        onArtifactOpen: ({ id, title }) => {
-          updateCardStore.stopThinking();
-          updateCardStore.setSessionPhase("building");
-          updateCardStore.openCard(id, title, previousFiles);
-          currentCardRef.current = {
-            id: `card-${Date.now()}`,
-            artifactId: id,
-            title,
-            subtasks: [],
-            status: "streaming",
-            previousFiles,
-            filesCreated: 0,
-            filesModified: 0,
-            createdAt: Date.now(),
-          };
-          setLiveCard({ ...currentCardRef.current });
-        },
-        onActionOpen: (artifactId, action) => {
-          updateCardStore.stopThinking();
-          const subtaskId = `subtask-${++subtaskCounterRef.current}`;
-          const label =
-            action.type === "file"
-              ? action.filePath
-              : action.type === "search-replace"
-              ? action.filePath
-              : action.type === "shell" || action.type === "start"
-              ? action.command
-              : "Unknown";
-          const subtask = {
-            id: subtaskId,
-            label,
-            type: action.type,
-            filePath: (action.type === "file" || action.type === "search-replace") ? action.filePath : undefined,
-            status: "streaming" as const,
-          };
-          updateCardStore.addSubtask(artifactId, subtask);
-
-          if (action.type === "file") {
-            updateCardStore.setCurrentStreamingFile(action.filePath);
-          }
-
-          if (currentCardRef.current) {
-            currentCardRef.current.subtasks = [...currentCardRef.current.subtasks, subtask];
-            setLiveCard({ ...currentCardRef.current });
-          }
-        },
-        onActionClose: (artifactId, action) => {
-          const subtaskId = `subtask-${subtaskCounterRef.current}`;
-          updateCardStore.completeSubtask(artifactId, subtaskId);
-          updateCardStore.setCurrentStreamingFile(null);
-
-          // Real-time file addition / search-replace
-          if (action.type === "search-replace" && action.filePath && action.searchBlock) {
-            const editorStore = useEditorStore.getState();
-            const existingContent = editorStore.generatedFiles[action.filePath];
-            if (existingContent && existingContent.includes(action.searchBlock)) {
-              const newContent = existingContent.replace(action.searchBlock, action.replaceBlock);
-              editorStore.addGeneratedFile(action.filePath, newContent);
-              updateCardStore.incrementFileStat(artifactId, "modified");
-              if (currentCardRef.current) {
-                currentCardRef.current.subtasks = currentCardRef.current.subtasks.map((s) =>
-                  s.id === subtaskId ? { ...s, status: "completed" as const } : s
-                );
-                currentCardRef.current.filesModified++;
-                setLiveCard({ ...currentCardRef.current });
-              }
-            } else {
-              console.warn("[search-replace] Search block not found in", action.filePath);
-            }
-          } else if (action.type === "file" && action.filePath && action.content) {
-            const editorStore = useEditorStore.getState();
-            const isNew = !previousFiles[action.filePath];
-            editorStore.addGeneratedFile(action.filePath, action.content);
-            updateCardStore.incrementFileStat(artifactId, isNew ? "created" : "modified");
-
-            if (currentCardRef.current) {
-              currentCardRef.current.subtasks = currentCardRef.current.subtasks.map((s) =>
-                s.id === subtaskId ? { ...s, status: "completed" as const } : s
-              );
-              if (isNew) currentCardRef.current.filesCreated++;
-              else currentCardRef.current.filesModified++;
-              setLiveCard({ ...currentCardRef.current });
-            }
-          } else if (currentCardRef.current) {
-            currentCardRef.current.subtasks = currentCardRef.current.subtasks.map((s) =>
-              s.id === subtaskId ? { ...s, status: "completed" as const } : s
-            );
-            setLiveCard({ ...currentCardRef.current });
-          }
-        },
-        onArtifactClose: (artifactId) => {
-          updateCardStore.closeCard(artifactId);
-          if (currentCardRef.current) {
-            currentCardRef.current.status = "completed";
-            setLiveCard({ ...currentCardRef.current });
-          }
-        },
-      });
-
+      const streamingParser = createStreamingParser(
+        previousFiles,
+        currentCardRef,
+        updateCardStore,
+        subtaskCounterRef,
+        setLiveCard
+      );
       streamingParserRef.current = streamingParser;
 
       try {
@@ -273,12 +311,12 @@ export function ChatPanel({ chatId, projectId, initialMessages = [] }: ChatPanel
           body: JSON.stringify({
             messages: apiMessages,
             chatId,
+            projectId,
             modelId: selectedModel.id,
             provider: selectedModel.provider,
             planMode,
             projectContext,
           }),
-          signal: abortController.signal,
         });
 
         if (response.status === 429) {
@@ -287,73 +325,26 @@ export function ChatPanel({ chatId, projectId, initialMessages = [] }: ChatPanel
             `Daily message limit reached (${data.used}/${data.limit}). Try again later.`
           );
           setUsageRefreshKey((k) => k + 1);
+          setIsStreaming(false);
+          updateCardStore.endSession();
           return;
         }
         if (!response.ok) throw new Error("Chat request failed");
-        if (!response.body) throw new Error("No response body");
 
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let fullContent = "";
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
+        const { generationId } = await response.json();
 
-          const chunk = decoder.decode(value, { stream: true });
-          fullContent += chunk;
-          setStreamingContent(fullContent);
-
-          // Feed only the new chunk to the streaming parser
-          streamingParser.push(chunk);
-        }
-
-        streamingParser.end();
-
-        // Add completed message
-        const assistantMessage: ChatMessage = {
-          id: uuid(),
-          chatId,
-          role: "assistant",
-          content: fullContent,
-          createdAt: new Date(),
-        };
-        addMessage(assistantMessage);
-
-        // Extract file actions and push to editor (safety net)
-        extractAndOpenFiles(fullContent);
-
-        // Save snapshot
-        const currentFiles = useEditorStore.getState().generatedFiles;
-        if (Object.keys(currentFiles).length > 0) {
-          fetch("/api/snapshots", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              chatId,
-              title: currentCardRef.current?.title ?? "AI Update",
-              files: currentFiles,
-              messageId: assistantMessage.id,
-              artifactId: currentCardRef.current?.artifactId,
-            }),
-          }).catch(() => {}); // Best-effort
-
-          // Persist files to database
-          fetch(`/api/projects/${projectId}/files`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ files: currentFiles }),
-          }).catch(() => {}); // Best-effort
-        }
+        // Connect to SSE stream
+        connectToGeneration(generationId, 0, {
+          previousFiles,
+          currentCardRef,
+          streamingParser,
+        });
       } catch (err) {
-        if ((err as Error).name !== "AbortError") {
-          console.error("Chat error:", err);
-          toast.error("Failed to get response. Please try again.");
-        }
-      } finally {
+        console.error("Chat error:", err);
+        toast.error("Failed to get response. Please try again.");
         setIsStreaming(false);
         setStreamingContent("");
         setLiveCard(undefined);
-        abortRef.current = null;
         streamingParserRef.current = null;
         updateCardStore.stopThinking();
         updateCardStore.setCurrentStreamingFile(null);
@@ -361,11 +352,18 @@ export function ChatPanel({ chatId, projectId, initialMessages = [] }: ChatPanel
         setUsageRefreshKey((k) => k + 1);
       }
     },
-    [chatId, projectId, messages, selectedModel, planMode, addMessage, setIsStreaming]
+    [chatId, projectId, messages, selectedModel, planMode, addMessage, setIsStreaming, connectToGeneration]
   );
 
+  // ── Stop / Cancel ──────────────────────────────────────────────────
+
   const handleStop = useCallback(() => {
-    abortRef.current?.abort();
+    const genId = activeGenerationIdRef.current;
+    if (genId) {
+      fetch(`/api/generations/${genId}/cancel`, { method: "POST" }).catch(() => {});
+    }
+    // Also close the SSE connection immediately for responsive UI
+    eventSourceRef.current?.close();
   }, []);
 
   const handlePlanApprove = useCallback(
@@ -396,6 +394,13 @@ export function ChatPanel({ chatId, projectId, initialMessages = [] }: ChatPanel
     return () => window.removeEventListener("appmake:initial-prompt", handler);
   }, [handleSend]);
 
+  // Cleanup SSE on unmount
+  useEffect(() => {
+    return () => {
+      eventSourceRef.current?.close();
+    };
+  }, []);
+
   return (
     <div className="flex h-full flex-col">
       <MessageList
@@ -421,4 +426,120 @@ export function ChatPanel({ chatId, projectId, initialMessages = [] }: ChatPanel
       <VersionHistory chatId={chatId} />
     </div>
   );
+}
+
+// ─── Helper: Create Streaming Parser ─────────────────────────────────
+
+function createStreamingParser(
+  previousFiles: Record<string, string>,
+  currentCardRef: { current: UpdateCard | null },
+  updateCardStore: ReturnType<typeof useUpdateCardStore.getState>,
+  subtaskCounterRef: React.MutableRefObject<number>,
+  setLiveCard: (card: UpdateCard | undefined) => void
+): MessageParser {
+  return new MessageParser({
+    onToolActivity: (activity) => {
+      if (activity.status === "calling") {
+        updateCardStore.setSessionPhase("researching");
+        updateCardStore.incrementToolCalls();
+      }
+    },
+    onArtifactOpen: ({ id, title }) => {
+      updateCardStore.stopThinking();
+      updateCardStore.setSessionPhase("building");
+      updateCardStore.openCard(id, title, previousFiles);
+      currentCardRef.current = {
+        id: `card-${Date.now()}`,
+        artifactId: id,
+        title,
+        subtasks: [],
+        status: "streaming",
+        previousFiles,
+        filesCreated: 0,
+        filesModified: 0,
+        createdAt: Date.now(),
+      };
+      setLiveCard({ ...currentCardRef.current });
+    },
+    onActionOpen: (artifactId, action) => {
+      updateCardStore.stopThinking();
+      const subtaskId = `subtask-${++subtaskCounterRef.current}`;
+      const label =
+        action.type === "file"
+          ? action.filePath
+          : action.type === "search-replace"
+          ? action.filePath
+          : action.type === "shell" || action.type === "start"
+          ? action.command
+          : "Unknown";
+      const subtask = {
+        id: subtaskId,
+        label,
+        type: action.type,
+        filePath: (action.type === "file" || action.type === "search-replace") ? action.filePath : undefined,
+        status: "streaming" as const,
+      };
+      updateCardStore.addSubtask(artifactId, subtask);
+
+      if (action.type === "file") {
+        updateCardStore.setCurrentStreamingFile(action.filePath);
+      }
+
+      if (currentCardRef.current) {
+        currentCardRef.current.subtasks = [...currentCardRef.current.subtasks, subtask];
+        setLiveCard({ ...currentCardRef.current });
+      }
+    },
+    onActionClose: (artifactId, action) => {
+      const subtaskId = `subtask-${subtaskCounterRef.current}`;
+      updateCardStore.completeSubtask(artifactId, subtaskId);
+      updateCardStore.setCurrentStreamingFile(null);
+
+      // Real-time file addition / search-replace
+      if (action.type === "search-replace" && action.filePath && action.searchBlock) {
+        const editorStore = useEditorStore.getState();
+        const existingContent = editorStore.generatedFiles[action.filePath];
+        if (existingContent && existingContent.includes(action.searchBlock)) {
+          const newContent = existingContent.replace(action.searchBlock, action.replaceBlock);
+          editorStore.addGeneratedFile(action.filePath, newContent);
+          updateCardStore.incrementFileStat(artifactId, "modified");
+          if (currentCardRef.current) {
+            currentCardRef.current.subtasks = currentCardRef.current.subtasks.map((s) =>
+              s.id === subtaskId ? { ...s, status: "completed" as const } : s
+            );
+            currentCardRef.current.filesModified++;
+            setLiveCard({ ...currentCardRef.current });
+          }
+        } else {
+          console.warn("[search-replace] Search block not found in", action.filePath);
+        }
+      } else if (action.type === "file" && action.filePath && action.content) {
+        const editorStore = useEditorStore.getState();
+        const isNew = !previousFiles[action.filePath];
+        editorStore.addGeneratedFile(action.filePath, action.content);
+        updateCardStore.incrementFileStat(artifactId, isNew ? "created" : "modified");
+
+        if (currentCardRef.current) {
+          currentCardRef.current.subtasks = currentCardRef.current.subtasks.map((s) =>
+            s.id === subtaskId ? { ...s, status: "completed" as const } : s
+          );
+          if (isNew) currentCardRef.current.filesCreated++;
+          else currentCardRef.current.filesModified++;
+          setLiveCard({ ...currentCardRef.current });
+        }
+      } else if (currentCardRef.current) {
+        currentCardRef.current.subtasks = currentCardRef.current.subtasks.map((s) =>
+          s.id === subtaskId ? { ...s, status: "completed" as const } : s
+        );
+        setLiveCard({ ...currentCardRef.current });
+      }
+    },
+    onArtifactClose: (artifactId) => {
+      updateCardStore.closeCard(artifactId);
+      if (currentCardRef.current) {
+        currentCardRef.current.status = "completed";
+        setLiveCard({ ...currentCardRef.current });
+      }
+    },
+  });
 }
