@@ -79,12 +79,12 @@ export function DashboardChatInput({
     [value, loading, router]
   );
 
-  // Handle external prompt from IdeaCards
+  // Handle external prompt from IdeaCards — fill textarea only, don't auto-submit
   useEffect(() => {
     if (externalPrompt) {
       setValue(externalPrompt);
-      handleSubmit(externalPrompt);
       onPromptConsumed?.();
+      textareaRef.current?.focus();
     }
   }, [externalPrompt]); // eslint-disable-line react-hooks/exhaustive-deps
 
