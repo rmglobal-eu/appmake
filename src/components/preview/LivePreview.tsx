@@ -6,21 +6,13 @@ import { useWebContainerPreview } from "@/hooks/useWebContainerPreview";
 import { usePreviewStore } from "@/lib/stores/preview-store";
 import { useChatStore } from "@/lib/stores/chat-store";
 import { PreviewErrorOverlay } from "./PreviewErrorOverlay";
-import { Loader2 } from "lucide-react";
+import { PreviewLoadingScreen } from "./PreviewLoadingScreen";
 
 interface LivePreviewProps {
   className?: string;
   /** Force esbuild-wasm preview (used on share page) */
   forceEsbuild?: boolean;
 }
-
-const STATUS_MESSAGES: Record<string, string> = {
-  booting: "Starting environment...",
-  mounting: "Preparing files...",
-  installing: "Installing packages...",
-  starting: "Starting dev server...",
-  bundling: "Bundling...",
-};
 
 export function LivePreview({
   className = "",
@@ -135,31 +127,36 @@ export function LivePreview({
     return () => window.removeEventListener("message", handleMessage);
   }, [handleMessage]);
 
-  // No files yet
-  if (effectiveStatus === "idle" && !esbuild.html && !previewUrl) {
-    return (
-      <div
-        className={`flex h-full items-center justify-center bg-muted/30 ${className}`}
-      >
-        <p className="text-sm text-muted-foreground">No preview available</p>
-      </div>
-    );
-  }
-
   // Determine rebuild function
   const rebuild = useEsbuild ? esbuild.rebuild : undefined;
 
-  // Status message
-  const statusMsg =
-    progressMessage ||
-    STATUS_MESSAGES[effectiveStatus] ||
-    (isStreaming ? "Generating..." : null);
-
-  const showLoading =
-    statusMsg &&
+  // Determine if we should show the full-screen loading animation
+  const isLoading =
     effectiveStatus !== "ready" &&
     effectiveStatus !== "error" &&
     effectiveStatus !== "idle";
+
+  const isGenerating = isStreaming && effectiveStatus !== "ready";
+
+  const showLoadingScreen = isLoading || isGenerating;
+
+  // Map to loading screen status
+  const loadingStatus = isGenerating && effectiveStatus === "idle"
+    ? "generating" as const
+    : isGenerating && effectiveStatus === "bundling"
+      ? "generating" as const
+      : effectiveStatus;
+
+  // No files yet — show empty state
+  if (effectiveStatus === "idle" && !esbuild.html && !previewUrl && !isStreaming) {
+    return (
+      <div
+        className={`flex h-full items-center justify-center bg-[#0a0a12] ${className}`}
+      >
+        <p className="text-sm text-white/30">No preview available</p>
+      </div>
+    );
+  }
 
   return (
     <div className={`relative h-full w-full ${className}`}>
@@ -167,34 +164,19 @@ export function LivePreview({
       <iframe
         ref={iframeRef}
         title="Preview"
-        className="h-full w-full border-0 bg-white"
-        // WebContainer iframes need to allow same-origin for cross-origin isolation
+        className="h-full w-full border-0 bg-[#0a0a12]"
         {...(!useEsbuild && previewUrl
           ? { allow: "cross-origin-isolated" }
           : {})}
       />
 
-      {/* Loading indicator */}
-      {showLoading && (
-        <div className="absolute inset-x-0 top-0 flex items-center justify-center">
-          <div className="mt-2 flex items-center gap-2 rounded-full bg-black/70 px-3 py-1.5 text-xs text-white shadow-lg backdrop-blur-sm">
-            <Loader2 className="h-3 w-3 animate-spin" />
-            {statusMsg}
-          </div>
-        </div>
+      {/* Full-screen loading animation */}
+      {showLoadingScreen && (
+        <PreviewLoadingScreen
+          status={loadingStatus}
+          progressMessage={progressMessage}
+        />
       )}
-
-      {/* Also show loading when streaming in esbuild mode */}
-      {useEsbuild &&
-        (isStreaming || esbuild.status === "bundling") &&
-        !showLoading && (
-          <div className="absolute inset-x-0 top-0 flex items-center justify-center">
-            <div className="mt-2 flex items-center gap-2 rounded-full bg-black/70 px-3 py-1.5 text-xs text-white shadow-lg backdrop-blur-sm">
-              <Loader2 className="h-3 w-3 animate-spin" />
-              {isStreaming ? "Generating..." : "Bundling..."}
-            </div>
-          </div>
-        )}
 
       {/* Error overlay — only show when NOT streaming */}
       {!isStreaming &&
