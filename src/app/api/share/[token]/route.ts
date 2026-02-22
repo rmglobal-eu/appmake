@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
-import { shares, projects, projectFiles } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { shares, projects, projectFiles, collaborators } from "@/lib/db/schema";
+import { eq, and } from "drizzle-orm";
+import { auth } from "@/lib/auth/config";
 
 export async function GET(
   _req: Request,
@@ -19,6 +20,36 @@ export async function GET(
   // Check expiry
   if (share.expiresAt && share.expiresAt < new Date()) {
     return new Response("Share link expired", { status: 410 });
+  }
+
+  // Auto-add authenticated user as collaborator
+  const session = await auth();
+  if (session?.user?.id) {
+    const userId = session.user.id;
+
+    // Get project to check ownership
+    const project = await db.query.projects.findFirst({
+      where: eq(projects.id, share.projectId),
+    });
+
+    // Only add if user is NOT the project owner
+    if (project && project.userId !== userId) {
+      // Check if already a collaborator
+      const existing = await db.query.collaborators.findFirst({
+        where: and(
+          eq(collaborators.projectId, share.projectId),
+          eq(collaborators.userId, userId)
+        ),
+      });
+
+      if (!existing) {
+        await db.insert(collaborators).values({
+          projectId: share.projectId,
+          userId,
+          role: share.permission === "edit" ? "editor" : "viewer",
+        });
+      }
+    }
   }
 
   // Get project info
