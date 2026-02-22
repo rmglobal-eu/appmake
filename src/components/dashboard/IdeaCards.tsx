@@ -92,7 +92,7 @@ export function IdeaCards({ onSelect }: { onSelect: (prompt: string) => void }) 
       <button
         onClick={fetchMoreIdeas}
         disabled={loading}
-        className="flex items-center gap-1.5 text-[12px] font-medium text-white/30 transition-colors hover:text-white/60 disabled:opacity-50"
+        className="flex items-center gap-1.5 text-[12px] font-medium text-white/80 transition-colors hover:text-white disabled:opacity-50"
       >
         <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
         More ideas
