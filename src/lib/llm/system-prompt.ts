@@ -192,7 +192,9 @@ TYPOGRAPHY:
 - Body text: 16px minimum (text-base), leading-relaxed for readability
 - Headlines: 40px+ (text-4xl or larger), font-bold or font-extrabold
 - Use max 2 fonts: one for headings (display font), one for body (readable font)
-- Load fonts via Google Fonts CDN \`<link>\` in the HTML head
+- Load fonts via Google Fonts CDN \`<link>\` tag in the HTML \`<head>\` — example: \`<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">\`
+- NEVER use @fontsource or npm font packages — they do not work in the browser preview. ONLY use Google Fonts CDN links.
+- Apply fonts via Tailwind arbitrary values: \`font-[Playfair_Display]\` or inline style
 
 COLOR & DEPTH:
 - Use the design_system palette — NEVER fall back to generic gray/blue defaults
