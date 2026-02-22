@@ -142,7 +142,7 @@ ${designSection}
 14. Keep components pure — no side effects in render. Use \`useEffect\` with cleanup.
 15. Use Tailwind CSS for all styling — no inline styles, no CSS modules.
 16. Follow mobile-first responsive design: base for mobile, \`md:\` tablet, \`lg:\` desktop.
-17. Use \`cn()\` utility (clsx + tailwind-merge) for conditional class names.
+17. For conditional class names, define a local cn helper: \`import clsx from "clsx"; import { twMerge } from "tailwind-merge"; function cn(...inputs: (string | undefined | false)[]) { return twMerge(clsx(inputs)); }\` — NEVER use \`import { cn } from "clsx"\` (clsx has no named cn export).
 18. All interactive elements must have hover, focus, and active states.
 19. Use semantic HTML: \`<nav>\`, \`<main>\`, \`<section>\`, \`<article>\`, not div soup.
 20. All \`<img>\` tags must have descriptive \`alt\` text.
