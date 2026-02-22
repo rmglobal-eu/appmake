@@ -92,6 +92,18 @@ export function MessageList({
   const prevMessagesLen = useRef(messages.length);
   const { currentStreamingFile, activeCardId } = useUpdateCardStore();
 
+  // Scroll to bottom on initial load (when messages already exist)
+  const hasScrolledInitially = useRef(false);
+  useEffect(() => {
+    if (messages.length > 0 && !hasScrolledInitially.current) {
+      hasScrolledInitially.current = true;
+      requestAnimationFrame(() => {
+        const el = containerRef.current;
+        if (el) el.scrollTop = el.scrollHeight;
+      });
+    }
+  }, [messages.length]);
+
   // Track whether user is scrolled to bottom
   const handleScroll = useCallback(() => {
     const el = containerRef.current;
