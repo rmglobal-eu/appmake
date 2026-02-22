@@ -80,7 +80,7 @@ export function IdeaCards({ onSelect }: { onSelect: (prompt: string) => void }) 
               <button
                 key={`${idea.title}-${i}`}
                 onClick={() => onSelect(idea.prompt)}
-                className={`whitespace-nowrap rounded-full border border-white/[0.08] bg-white/[0.04] px-4 py-2 text-[13px] font-medium text-white/60 transition-all hover:border-white/20 hover:bg-white/[0.08] hover:text-white/90 ${
+                className={`whitespace-nowrap rounded-full border border-white/10 bg-black/50 px-4 py-2 text-[13px] font-medium text-white/90 backdrop-blur-sm transition-all hover:bg-black/70 hover:text-white ${
                   fadeIn ? "opacity-100" : "opacity-0"
                 }`}
                 style={{ transitionDuration: `${150 + i * 40}ms` }}
