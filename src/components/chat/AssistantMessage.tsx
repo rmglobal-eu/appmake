@@ -12,6 +12,7 @@ import type { ToolActivity, InterviewData } from "@/lib/parser/types";
 import {
   Globe,
   ExternalLink,
+  ImageIcon,
   CheckCircle2,
   Loader2,
   AlertCircle,
@@ -54,6 +55,7 @@ function getToolLabel(name: string): string {
   switch (name) {
     case "webSearch": return "Searching the web";
     case "fetchUrl": return "Reading webpage";
+    case "generateImage": return "Generating image";
     default: return name;
   }
 }
@@ -64,6 +66,8 @@ function getToolIcon(name: string) {
       return <Globe className="h-3.5 w-3.5" />;
     case "fetchUrl":
       return <ExternalLink className="h-3.5 w-3.5" />;
+    case "generateImage":
+      return <ImageIcon className="h-3.5 w-3.5" />;
     default:
       return <Globe className="h-3.5 w-3.5" />;
   }
@@ -73,7 +77,7 @@ function getToolQuery(activity: ToolActivity): string | null {
   if (!activity.args) return null;
   try {
     const parsed = JSON.parse(activity.args);
-    return parsed.query || parsed.url || null;
+    return parsed.query || parsed.url || parsed.prompt || null;
   } catch {
     return activity.args;
   }

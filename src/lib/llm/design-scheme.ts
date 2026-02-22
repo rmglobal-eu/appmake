@@ -15,7 +15,12 @@ const PRESETS: Record<string, DesignScheme> = {
       border: "#334155",
     },
     features: ["rounded", "gradient", "shadow", "glassmorphism"],
-    fonts: { heading: "Inter", body: "Inter" },
+    fonts: { heading: "Space Grotesk", body: "Inter" },
+    gradients: {
+      hero: "linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #0F172A 100%)",
+      surface: "linear-gradient(180deg, rgba(59,130,246,0.05) 0%, transparent 100%)",
+      accent: "linear-gradient(135deg, #3B82F6 0%, #6366F1 100%)",
+    },
     mood: "tech",
   },
   "warm-orange": {
@@ -30,7 +35,12 @@ const PRESETS: Record<string, DesignScheme> = {
       border: "#E7E5E4",
     },
     features: ["rounded", "shadow", "bold"],
-    fonts: { heading: "DM Sans", body: "DM Sans" },
+    fonts: { heading: "Playfair Display", body: "DM Sans" },
+    gradients: {
+      hero: "linear-gradient(135deg, #FFFBEB 0%, #FFF7ED 50%, #FFFBEB 100%)",
+      surface: "linear-gradient(180deg, rgba(249,115,22,0.06) 0%, transparent 100%)",
+      accent: "linear-gradient(135deg, #F97316 0%, #EF4444 100%)",
+    },
     mood: "warm",
   },
   "luxury-gold": {
@@ -46,6 +56,11 @@ const PRESETS: Record<string, DesignScheme> = {
     },
     features: ["sharp", "border", "gradient"],
     fonts: { heading: "Playfair Display", body: "Inter" },
+    gradients: {
+      hero: "linear-gradient(160deg, #0A0A0A 0%, #1A1A1A 40%, #0A0A0A 100%)",
+      surface: "linear-gradient(180deg, rgba(212,175,55,0.04) 0%, transparent 100%)",
+      accent: "linear-gradient(135deg, #D4AF37 0%, #FFD700 100%)",
+    },
     mood: "luxury",
   },
   "nature-green": {
@@ -60,7 +75,12 @@ const PRESETS: Record<string, DesignScheme> = {
       border: "#D1D5DB",
     },
     features: ["rounded", "shadow", "minimal"],
-    fonts: { heading: "Plus Jakarta Sans", body: "Inter" },
+    fonts: { heading: "Lora", body: "Inter" },
+    gradients: {
+      hero: "linear-gradient(135deg, #F0FDF4 0%, #ECFDF5 50%, #F0FDF4 100%)",
+      surface: "linear-gradient(180deg, rgba(22,163,74,0.04) 0%, transparent 100%)",
+      accent: "linear-gradient(135deg, #16A34A 0%, #84CC16 100%)",
+    },
     mood: "natural",
   },
   "modern-purple": {
@@ -76,6 +96,11 @@ const PRESETS: Record<string, DesignScheme> = {
     },
     features: ["rounded", "gradient", "shadow", "glassmorphism"],
     fonts: { heading: "Outfit", body: "Inter" },
+    gradients: {
+      hero: "linear-gradient(135deg, #FAFAFA 0%, #F5F3FF 50%, #FAFAFA 100%)",
+      surface: "linear-gradient(180deg, rgba(139,92,246,0.04) 0%, transparent 100%)",
+      accent: "linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%)",
+    },
     mood: "modern",
   },
   "ocean-teal": {
@@ -91,6 +116,11 @@ const PRESETS: Record<string, DesignScheme> = {
     },
     features: ["rounded", "shadow", "minimal"],
     fonts: { heading: "Space Grotesk", body: "DM Sans" },
+    gradients: {
+      hero: "linear-gradient(135deg, #F0FDFA 0%, #ECFEFF 50%, #F0FDFA 100%)",
+      surface: "linear-gradient(180deg, rgba(13,148,136,0.04) 0%, transparent 100%)",
+      accent: "linear-gradient(135deg, #0D9488 0%, #0E7490 100%)",
+    },
     mood: "calm",
   },
   "dark-minimal": {
@@ -106,6 +136,11 @@ const PRESETS: Record<string, DesignScheme> = {
     },
     features: ["sharp", "border", "minimal"],
     fonts: { heading: "Geist", body: "Geist" },
+    gradients: {
+      hero: "linear-gradient(160deg, #09090B 0%, #18181B 40%, #09090B 100%)",
+      surface: "linear-gradient(180deg, rgba(244,63,94,0.03) 0%, transparent 100%)",
+      accent: "linear-gradient(135deg, #F43F5E 0%, #E11D48 100%)",
+    },
     mood: "minimal",
   },
   "startup-coral": {
@@ -120,7 +155,12 @@ const PRESETS: Record<string, DesignScheme> = {
       border: "#DFE6E9",
     },
     features: ["rounded", "shadow", "bold", "gradient"],
-    fonts: { heading: "Poppins", body: "Inter" },
+    fonts: { heading: "Plus Jakarta Sans", body: "Inter" },
+    gradients: {
+      hero: "linear-gradient(135deg, #FFFFFF 0%, #FFF5F5 50%, #FFFFFF 100%)",
+      surface: "linear-gradient(180deg, rgba(255,107,107,0.04) 0%, transparent 100%)",
+      accent: "linear-gradient(135deg, #FF6B6B 0%, #FFA07A 100%)",
+    },
     mood: "playful",
   },
   "corporate-slate": {
@@ -135,7 +175,12 @@ const PRESETS: Record<string, DesignScheme> = {
       border: "#E2E8F0",
     },
     features: ["rounded", "shadow", "border"],
-    fonts: { heading: "Inter", body: "Inter" },
+    fonts: { heading: "Sora", body: "Inter" },
+    gradients: {
+      hero: "linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 50%, #FFFFFF 100%)",
+      surface: "linear-gradient(180deg, rgba(30,64,175,0.03) 0%, transparent 100%)",
+      accent: "linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%)",
+    },
     mood: "professional",
   },
   "creative-pink": {
@@ -150,7 +195,12 @@ const PRESETS: Record<string, DesignScheme> = {
       border: "#E5E7EB",
     },
     features: ["rounded", "gradient", "bold"],
-    fonts: { heading: "Sora", body: "DM Sans" },
+    fonts: { heading: "Outfit", body: "DM Sans" },
+    gradients: {
+      hero: "linear-gradient(135deg, #FDF2F8 0%, #FAE8FF 50%, #FDF2F8 100%)",
+      surface: "linear-gradient(180deg, rgba(236,72,153,0.04) 0%, transparent 100%)",
+      accent: "linear-gradient(135deg, #EC4899 0%, #8B5CF6 100%)",
+    },
     mood: "creative",
   },
 };

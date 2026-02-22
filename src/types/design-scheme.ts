@@ -23,5 +23,10 @@ export interface DesignScheme {
     heading: string;
     body: string;
   };
+  gradients?: {
+    hero?: string;
+    surface?: string;
+    accent?: string;
+  };
   mood: string;
 }

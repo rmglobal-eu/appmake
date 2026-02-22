@@ -215,7 +215,88 @@ export const fetchUrlTool = tool({
   },
 });
 
+export const generateImageTool = tool({
+  description:
+    "Generate an image using AI. Use this to create hero backgrounds, feature images, product photos, team photos, and any visual content for the website. Generate images BEFORE writing code that uses them. Returns a URL to the generated image.",
+  inputSchema: z.object({
+    prompt: z
+      .string()
+      .describe(
+        "Detailed image description. Be specific: include subject, style, lighting, mood, and composition. Example: 'Modern coffee shop interior, warm lighting, wooden tables, latte art close-up, cozy atmosphere, editorial photography style'"
+      ),
+    aspect_ratio: z
+      .enum(["16:9", "1:1", "9:16", "4:3", "3:2"])
+      .optional()
+      .default("16:9")
+      .describe("Image aspect ratio. Use 16:9 for heroes/banners, 1:1 for cards/avatars, 4:3 for features, 9:16 for mobile"),
+  }),
+  execute: async ({ prompt, aspect_ratio }: { prompt: string; aspect_ratio: string }) => {
+    const fallbackUrl = `https://placehold.co/1200x675/1a1a2e/ffffff?text=${encodeURIComponent(prompt.slice(0, 30))}`;
+
+    const apiToken = process.env.REPLICATE_API_TOKEN;
+    if (!apiToken) {
+      return {
+        url: fallbackUrl,
+        source: "placeholder",
+        note: "REPLICATE_API_TOKEN not set — using placeholder image",
+      };
+    }
+
+    try {
+      const res = await fetch("https://api.replicate.com/v1/predictions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiToken}`,
+          "Content-Type": "application/json",
+          Prefer: "wait",
+        },
+        body: JSON.stringify({
+          model: "black-forest-labs/flux-schnell",
+          input: {
+            prompt,
+            aspect_ratio,
+            num_outputs: 1,
+          },
+        }),
+        signal: AbortSignal.timeout(30000),
+      });
+
+      if (!res.ok) {
+        const errText = await res.text().catch(() => "Unknown error");
+        return {
+          url: fallbackUrl,
+          error: `Replicate API error: ${res.status} ${errText}`,
+          source: "placeholder",
+        };
+      }
+
+      const data = await res.json();
+      const imageUrl = data.output?.[0] ?? data.output;
+
+      if (!imageUrl || typeof imageUrl !== "string") {
+        return {
+          url: fallbackUrl,
+          error: "No image URL in response",
+          source: "placeholder",
+        };
+      }
+
+      return {
+        url: imageUrl,
+        source: "replicate",
+      };
+    } catch (err) {
+      return {
+        url: fallbackUrl,
+        error: `Image generation failed: ${err instanceof Error ? err.message : "Unknown error"}`,
+        source: "placeholder",
+      };
+    }
+  },
+});
+
 export const allTools = {
   webSearch: webSearchTool,
   fetchUrl: fetchUrlTool,
+  generateImage: generateImageTool,
 };
