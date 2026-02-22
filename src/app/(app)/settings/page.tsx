@@ -33,6 +33,7 @@ import {
   Check,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { DK, SE, GB, ES, CN, SA } from "country-flag-icons/react/3x2";
 import AISettingsPanel from "@/components/settings/AISettings";
 import EditorSettingsPanel from "@/components/settings/EditorSettings";
 import NotificationSettingsPanel from "@/components/settings/NotificationSettings";
@@ -1028,12 +1029,12 @@ function GitHubSettings() {
 function LanguageSettings() {
   const t = useTranslations("settings");
   const locales = [
-    { code: "da", name: "Dansk", region: "Danmark" },
-    { code: "sv", name: "Svenska", region: "Sverige" },
-    { code: "en", name: "English", region: "Global" },
-    { code: "es", name: "Español", region: "Global" },
-    { code: "zh", name: "中文", region: "简体中文" },
-    { code: "ar", name: "العربية", region: "RTL" },
+    { code: "da", name: "Dansk", Flag: DK },
+    { code: "sv", name: "Svenska", Flag: SE },
+    { code: "en", name: "English", Flag: GB },
+    { code: "es", name: "Español", Flag: ES },
+    { code: "zh", name: "中文", Flag: CN },
+    { code: "ar", name: "العربية", Flag: SA },
   ];
 
   const currentLocale = document.cookie
@@ -1052,32 +1053,23 @@ function LanguageSettings() {
       <div className="mt-8">
         <SectionCard>
           <div className="p-6">
-            <div className="grid grid-cols-1 gap-2">
+            <div className="grid grid-cols-1 gap-1.5">
               {locales.map((locale) => {
                 const isActive = currentLocale === locale.code;
                 return (
                   <button
                     key={locale.code}
                     onClick={() => setLocale(locale.code)}
-                    className={`group flex items-center gap-4 rounded-xl border px-5 py-4 text-left transition-all ${
+                    className={`group flex items-center gap-4 rounded-xl border px-5 py-3.5 text-left transition-all ${
                       isActive
                         ? "border-violet-500/50 bg-violet-500/[0.08]"
                         : "border-transparent hover:bg-white/[0.04]"
                     }`}
                   >
-                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-xs font-bold uppercase tracking-wider ${
-                      isActive
-                        ? "bg-violet-500/20 text-violet-400"
-                        : "bg-white/[0.06] text-white/40 group-hover:bg-white/[0.08] group-hover:text-white/50"
-                    }`}>
-                      {locale.code}
-                    </div>
+                    <locale.Flag title={locale.name} className="h-5 w-7 shrink-0 rounded-[3px]" />
                     <div className="flex-1 min-w-0">
                       <p className={`text-sm font-medium ${isActive ? "text-white" : "text-white/70 group-hover:text-white/90"}`}>
                         {locale.name}
-                      </p>
-                      <p className={`text-xs ${isActive ? "text-white/40" : "text-white/25 group-hover:text-white/35"}`}>
-                        {locale.region}
                       </p>
                     </div>
                     <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition-all ${
