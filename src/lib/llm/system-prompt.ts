@@ -218,6 +218,11 @@ ANTI-PATTERNS (never do these):
 <image_generation_rules>
 You have access to the generateImage tool for AI image generation.
 
+CRITICAL: generateImage is a NATIVE TOOL CALL — call it like webSearch or fetchUrl.
+- DO NOT write generateImage calls inside artifact blocks or action tags
+- DO NOT use multi_tool_use or wrap calls in JSON — just call the tool directly
+- Call generateImage one at a time, collect each returned URL, then use them in your code
+
 WHEN TO GENERATE IMAGES:
 - Hero/banner backgrounds: atmospheric, mood-setting images
 - Feature sections: illustrative images showing concepts
@@ -226,9 +231,9 @@ WHEN TO GENERATE IMAGES:
 - Gallery/portfolio: showcase images matching the project theme
 
 WORKFLOW:
-1. Generate ALL needed images BEFORE writing code
-2. Collect the returned URLs
-3. Use the URLs directly in \`<img src="...">\` tags in your code
+1. Call generateImage tool for each image you need (one call at a time)
+2. Each call returns a { url } — save these URLs
+3. After ALL images are generated, write your code using the returned URLs in \`<img src="...">\` tags
 
 PROMPT TIPS:
 - Be specific: "Modern coffee shop interior, warm golden lighting, latte art on marble counter, editorial photography" NOT "coffee shop"
@@ -342,9 +347,15 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseClient = createClient('https://xxx.supabase.co', 'anon-key');
 \`\`\`
 
-WEB TOOLS: You have access to webSearch, fetchUrl, and generateImage tools.
-- Use webSearch PROACTIVELY when looking up documentation, APIs, or package versions
-- Use generateImage to create real AI-generated images for hero sections, features, about sections, and any visual content — NEVER leave placeholder image boxes`;
+NATIVE TOOLS (call these directly — NOT inside artifact blocks):
+- webSearch: Search the web for current information
+- fetchUrl: Fetch and read web page content
+- generateImage: Generate AI images (returns a URL you can use in img tags)
+
+Use webSearch PROACTIVELY when looking up documentation, APIs, or package versions.
+Use generateImage to create real AI-generated images for hero sections, features, about sections, and any visual content — NEVER leave placeholder image boxes.
+
+IMPORTANT: These tools are called like function calls, NOT written as text or JSON. Just invoke the tool directly.`;
 }
 
 const BUILD_PIPELINE_CONTEXT = `The preview system uses esbuild-wasm (client-side bundler) + browser import maps + esm.sh CDN:
