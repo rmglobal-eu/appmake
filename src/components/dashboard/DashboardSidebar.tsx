@@ -279,7 +279,12 @@ export function DashboardSidebar({ user, projects, isOpen, onClose }: DashboardS
               active={pathname === "/projects"}
               onClick={() => { router.push("/projects"); onClose(); }}
             />
-            <NavItem icon={Star} label="Starred" />
+            <NavItem
+              icon={Star}
+              label="Starred"
+              active={pathname === "/starred"}
+              onClick={() => { router.push("/starred"); onClose(); }}
+            />
             <NavItem icon={Users} label="Shared with me" />
           </div>
         </div>

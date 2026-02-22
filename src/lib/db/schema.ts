@@ -441,6 +441,23 @@ export const invoices = pgTable("invoices", {
   createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
 });
 
+// ─── Starred Projects ────────────────────────────────────────────────
+
+export const starredProjects = pgTable(
+  "starred_projects",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  },
+  (table) => [unique().on(table.userId, table.projectId)]
+);
+
 // ─── Likes ───────────────────────────────────────────────────────────
 
 export const likes = pgTable(

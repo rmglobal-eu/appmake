@@ -14,6 +14,7 @@ import {
   Check,
   X,
   Loader2,
+  Star,
 } from "lucide-react";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 
@@ -23,6 +24,7 @@ interface Project {
   template: string;
   createdAt: string;
   updatedAt: string;
+  starred: boolean;
 }
 
 type SortKey = "updatedAt" | "createdAt" | "name";
@@ -137,6 +139,22 @@ export default function ProjectsPage() {
     } catch {
       toast.error("Failed to create project");
       setCreating(false);
+    }
+  }
+
+  async function toggleStar(e: React.MouseEvent, projectId: string) {
+    e.stopPropagation();
+    try {
+      const res = await fetch(`/api/projects/${projectId}/star`, {
+        method: "POST",
+      });
+      if (!res.ok) throw new Error();
+      const { starred } = await res.json();
+      setProjects((prev) =>
+        prev.map((p) => (p.id === projectId ? { ...p, starred } : p))
+      );
+    } catch {
+      toast.error("Failed to update star");
     }
   }
 
@@ -340,6 +358,28 @@ export default function ProjectsPage() {
                           <Check className="h-3 w-3" />
                         </button>
                       </div>
+
+                      {/* Star overlay */}
+                      <div
+                        className={`absolute right-2.5 top-2.5 ${
+                          project.starred
+                            ? "opacity-100"
+                            : "opacity-0 group-hover:opacity-100"
+                        } transition-opacity`}
+                      >
+                        <button
+                          onClick={(e) => toggleStar(e, project.id)}
+                          className="flex h-6 w-6 items-center justify-center rounded-full bg-black/40 transition-colors hover:bg-black/60"
+                        >
+                          <Star
+                            className={`h-3.5 w-3.5 ${
+                              project.starred
+                                ? "fill-yellow-400 text-yellow-400"
+                                : "text-white/70"
+                            }`}
+                          />
+                        </button>
+                      </div>
                     </div>
 
                     {/* Info */}
@@ -379,6 +419,9 @@ export default function ProjectsPage() {
                       </th>
                       <th className="hidden px-3 py-3 text-left text-xs font-medium text-white/40 sm:table-cell">
                         Created by
+                      </th>
+                      <th className="w-10 px-3 py-3">
+                        <span className="sr-only">Star</span>
                       </th>
                     </tr>
                   </thead>
@@ -441,6 +484,20 @@ export default function ProjectsPage() {
                               {session.user?.name || firstName}
                             </span>
                           </div>
+                        </td>
+                        <td className="px-3 py-3">
+                          <button
+                            onClick={(e) => toggleStar(e, project.id)}
+                            className="flex h-6 w-6 items-center justify-center rounded-full transition-colors hover:bg-white/10"
+                          >
+                            <Star
+                              className={`h-3.5 w-3.5 ${
+                                project.starred
+                                  ? "fill-yellow-400 text-yellow-400"
+                                  : "text-white/20 hover:text-white/50"
+                              }`}
+                            />
+                          </button>
                         </td>
                       </tr>
                     ))}

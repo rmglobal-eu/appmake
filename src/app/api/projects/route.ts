@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth/config";
 import { db } from "@/lib/db";
-import { projects, chats } from "@/lib/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { projects, chats, starredProjects } from "@/lib/db/schema";
+import { eq, desc, and } from "drizzle-orm";
 
 export async function GET() {
   const session = await auth();
@@ -10,10 +10,42 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const userProjects = await db.query.projects.findMany({
-    where: eq(projects.userId, session.user.id),
-    orderBy: [desc(projects.updatedAt)],
-  });
+  const rows = await db
+    .select({
+      id: projects.id,
+      userId: projects.userId,
+      name: projects.name,
+      template: projects.template,
+      isPublic: projects.isPublic,
+      description: projects.description,
+      category: projects.category,
+      createdAt: projects.createdAt,
+      updatedAt: projects.updatedAt,
+      starredId: starredProjects.id,
+    })
+    .from(projects)
+    .leftJoin(
+      starredProjects,
+      and(
+        eq(starredProjects.projectId, projects.id),
+        eq(starredProjects.userId, session.user.id)
+      )
+    )
+    .where(eq(projects.userId, session.user.id))
+    .orderBy(desc(projects.updatedAt));
+
+  const userProjects = rows.map((r) => ({
+    id: r.id,
+    userId: r.userId,
+    name: r.name,
+    template: r.template,
+    isPublic: r.isPublic,
+    description: r.description,
+    category: r.category,
+    createdAt: r.createdAt,
+    updatedAt: r.updatedAt,
+    starred: r.starredId !== null,
+  }));
 
   return NextResponse.json(userProjects);
 }
