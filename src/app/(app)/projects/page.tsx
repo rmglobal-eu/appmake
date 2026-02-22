@@ -15,6 +15,8 @@ import {
   X,
   Loader2,
   Star,
+  Trash2,
+  Sparkles,
 } from "lucide-react";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 
@@ -158,10 +160,36 @@ export default function ProjectsPage() {
     }
   }
 
+  // Delete
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  async function handleDeleteSelected() {
+    if (deleting) return;
+    setDeleting(true);
+    try {
+      const ids = Array.from(selectedIds);
+      await Promise.all(
+        ids.map((id) =>
+          fetch(`/api/projects/${id}`, { method: "DELETE" })
+        )
+      );
+      setProjects((prev) => prev.filter((p) => !selectedIds.has(p.id)));
+      setSelectedIds(new Set());
+      setDeleteConfirmOpen(false);
+      toast.success(`${ids.length} project${ids.length > 1 ? "s" : ""} deleted`);
+    } catch {
+      toast.error("Failed to delete projects");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   if (!session) return null;
 
   const firstName = session.user?.name?.split(" ")[0] || "User";
   const initial = firstName.charAt(0).toUpperCase();
+  const hasNoProjects = !loading && projects.length === 0;
 
   return (
     <div className="flex h-screen">
@@ -289,6 +317,59 @@ export default function ProjectsPage() {
             {loading ? (
               <div className="flex items-center justify-center py-20">
                 <Loader2 className="h-6 w-6 animate-spin text-white/30" />
+              </div>
+            ) : hasNoProjects ? (
+              /* Empty state — no projects at all */
+              <div className="flex flex-col items-center justify-center py-16">
+                {/* Animated orb */}
+                <div className="relative mb-8">
+                  <div
+                    className="absolute -inset-8 rounded-full opacity-25 blur-3xl"
+                    style={{
+                      background: "conic-gradient(from 0deg, #6366f1, #ff1493, #f59e0b, #6366f1)",
+                      animation: "spin 6s linear infinite",
+                    }}
+                  />
+                  <div className="absolute -inset-10" style={{ animation: "spin 10s linear infinite" }}>
+                    <div className="absolute left-1/2 top-0 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-violet-400/60" />
+                    <div className="absolute bottom-0 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-pink-400/40" />
+                  </div>
+                  <div className="absolute -inset-10" style={{ animation: "spin 14s linear infinite reverse" }}>
+                    <div className="absolute right-0 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-yellow-400/50" />
+                  </div>
+                  <div
+                    className="relative flex h-24 w-24 items-center justify-center rounded-full border border-white/10 bg-gradient-to-br from-white/[0.08] to-white/[0.02] backdrop-blur-sm"
+                    style={{ animation: "fadeInUp 600ms ease-out" }}
+                  >
+                    <Sparkles className="h-10 w-10 text-violet-400/70" style={{ animation: "logoPulse 2.5s ease-in-out infinite" }} />
+                  </div>
+                </div>
+
+                <h2
+                  className="text-xl font-semibold text-white/80"
+                  style={{ animation: "fadeInUp 600ms ease-out 100ms both" }}
+                >
+                  Start building something amazing
+                </h2>
+                <p
+                  className="mt-2 max-w-md text-center text-sm text-white/40"
+                  style={{ animation: "fadeInUp 600ms ease-out 200ms both" }}
+                >
+                  Create your first project and let AI help you build it. From landing pages to full-stack apps, the possibilities are endless.
+                </p>
+                <button
+                  onClick={handleCreateProject}
+                  disabled={creating}
+                  className="mt-6 flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-pink-600 px-6 py-2.5 text-sm font-semibold text-white transition-all hover:shadow-lg hover:shadow-violet-500/25 active:scale-[0.98]"
+                  style={{ animation: "fadeInUp 600ms ease-out 300ms both" }}
+                >
+                  {creating ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Plus className="h-4 w-4" />
+                  )}
+                  Create your first project
+                </button>
               </div>
             ) : viewMode === "grid" ? (
               /* Grid view */
@@ -538,12 +619,65 @@ export default function ProjectsPage() {
                     Select all ({filtered.length})
                   </button>
                 </div>
-                <button
-                  onClick={cancelSelection}
-                  className="rounded-lg px-3 py-1.5 text-sm font-medium text-white/60 transition-colors hover:bg-white/5 hover:text-white"
-                >
-                  Cancel
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setDeleteConfirmOpen(true)}
+                    className="flex items-center gap-1.5 rounded-lg bg-red-500/10 px-3 py-1.5 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/20"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Delete
+                  </button>
+                  <button
+                    onClick={cancelSelection}
+                    className="rounded-lg px-3 py-1.5 text-sm font-medium text-white/60 transition-colors hover:bg-white/5 hover:text-white"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Delete confirmation dialog */}
+          {deleteConfirmOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center">
+              <div
+                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                onClick={() => !deleting && setDeleteConfirmOpen(false)}
+              />
+              <div
+                className="relative w-full max-w-sm rounded-2xl border border-white/10 bg-[#1c1c20] p-6 shadow-2xl"
+                style={{ animation: "fadeInUp 200ms ease-out" }}
+              >
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-500/10">
+                  <Trash2 className="h-6 w-6 text-red-400" />
+                </div>
+                <h3 className="mt-4 text-lg font-semibold text-white">
+                  Delete {selectedIds.size} project{selectedIds.size > 1 ? "s" : ""}?
+                </h3>
+                <p className="mt-2 text-sm text-white/50">
+                  This action cannot be undone. All project data including chats, files, and deployments will be permanently deleted.
+                </p>
+                <div className="mt-6 flex gap-3">
+                  <button
+                    onClick={() => setDeleteConfirmOpen(false)}
+                    disabled={deleting}
+                    className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-white/10"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleDeleteSelected}
+                    disabled={deleting}
+                    className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-500"
+                  >
+                    {deleting ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "Delete"
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           )}

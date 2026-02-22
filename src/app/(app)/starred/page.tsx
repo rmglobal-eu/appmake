@@ -257,17 +257,51 @@ export default function StarredPage() {
                 <Loader2 className="h-6 w-6 animate-spin text-white/30" />
               </div>
             ) : isEmpty ? (
-              /* Empty state */
-              <div className="flex flex-col items-center justify-center py-24">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5">
-                  <StickyNote className="h-8 w-8 text-white/20" />
+              /* Empty state — animated */
+              <div className="flex flex-col items-center justify-center py-16">
+                {/* Animated orb with star */}
+                <div className="relative mb-8">
+                  {/* Gradient glow ring */}
+                  <div
+                    className="absolute -inset-6 rounded-full opacity-30 blur-2xl"
+                    style={{
+                      background: "radial-gradient(circle, #ff1493 0%, #6366f1 50%, transparent 70%)",
+                      animation: "logoPulse 3s ease-in-out infinite",
+                    }}
+                  />
+                  {/* Orbiting dots */}
+                  <div className="absolute -inset-8" style={{ animation: "spin 8s linear infinite" }}>
+                    <div className="absolute left-1/2 top-0 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-pink-400/60" />
+                    <div className="absolute bottom-0 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-violet-400/40" />
+                  </div>
+                  <div className="absolute -inset-8" style={{ animation: "spin 12s linear infinite reverse" }}>
+                    <div className="absolute right-0 top-1/2 h-1 w-1 -translate-y-1/2 rounded-full bg-yellow-400/50" />
+                  </div>
+                  {/* Main circle */}
+                  <div
+                    className="relative flex h-20 w-20 items-center justify-center rounded-full border border-white/10 bg-gradient-to-br from-white/[0.08] to-white/[0.02] backdrop-blur-sm"
+                    style={{ animation: "fadeInUp 600ms ease-out" }}
+                  >
+                    <Star className="h-8 w-8 text-yellow-400/70" style={{ animation: "logoPulse 2.5s ease-in-out infinite" }} />
+                  </div>
                 </div>
-                <p className="mt-5 text-base font-medium text-white/60">
-                  Star projects to access them quickly from any workspace
+
+                <h2
+                  className="text-lg font-semibold text-white/80"
+                  style={{ animation: "fadeInUp 600ms ease-out 100ms both" }}
+                >
+                  No starred projects yet
+                </h2>
+                <p
+                  className="mt-2 max-w-sm text-center text-sm text-white/40"
+                  style={{ animation: "fadeInUp 600ms ease-out 200ms both" }}
+                >
+                  Star projects to access them quickly from any workspace. Click the star icon on any project to get started.
                 </p>
                 <button
                   onClick={() => router.push("/projects")}
-                  className="mt-4 rounded-lg bg-white/10 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-white/15"
+                  className="mt-6 rounded-xl bg-gradient-to-r from-violet-600 to-pink-600 px-6 py-2.5 text-sm font-semibold text-white transition-all hover:shadow-lg hover:shadow-violet-500/25 active:scale-[0.98]"
+                  style={{ animation: "fadeInUp 600ms ease-out 300ms both" }}
                 >
                   Browse projects
                 </button>
