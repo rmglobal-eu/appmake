@@ -68,7 +68,7 @@ export default function DashboardPage() {
           {/* Scrollable content */}
           <div className="flex-1 overflow-y-auto">
             {/* Hero area */}
-            <div className="flex min-h-[calc(100vh-80px)] flex-col items-center justify-center gap-8 px-4">
+            <div className="flex flex-col items-center px-4 pt-[18vh] pb-12 gap-8">
               <TypingHeading name={firstName} />
               <DashboardChatInput
                 externalPrompt={selectedIdea}
