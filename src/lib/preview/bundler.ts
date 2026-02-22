@@ -394,12 +394,17 @@ createRoot(document.getElementById("root")).render(<EB><App /></EB>);
                 }
               }
 
-              // 3. Asset file (image, font, video, etc.) → virtual placeholder
+              // 3. Font packages (@fontsource) → silently ignore (CSS-only, use Google Fonts CDN instead)
+              if (raw.startsWith("@fontsource")) {
+                return { path: raw, namespace: "empty-module" };
+              }
+
+              // 4. Asset file (image, font, video, etc.) → virtual placeholder
               if (ASSET_EXTENSIONS.some((ext) => raw.toLowerCase().endsWith(ext))) {
                 return { path: raw, namespace: "asset" };
               }
 
-              // 4. Bare npm specifier → external (track full specifier for exact import map entries)
+              // 5. Bare npm specifier → external (track full specifier for exact import map entries)
               if (isBareSpecifier(raw)) {
                 externals.add(raw);
                 return { path: raw, external: true };
@@ -407,6 +412,11 @@ createRoot(document.getElementById("root")).render(<EB><App /></EB>);
 
               // 5. Fallback
               return { path: raw, external: true };
+            });
+
+            // Empty module loader — for packages that can't run in browser (e.g., @fontsource)
+            build.onLoad({ filter: /.*/, namespace: "empty-module" }, () => {
+              return { contents: "export default {};", loader: "js" };
             });
 
             // Asset loader — returns a placeholder SVG data URL for images,
