@@ -64,11 +64,14 @@ function buildDirectives(): Record<string, string[]> {
       "https://va.vercel-scripts.com",
       "https://esm.sh", // esm.sh CDN for npm packages in preview
       "https://cdn.tailwindcss.com",
+      "https://*.webcontainer-api.io", // WebContainer communication
+      "wss://*.webcontainer-api.io", // WebContainer WebSocket + npm registry proxy
     ],
 
     "frame-src": [
       "'self'",
       "blob:",
+      "https://*.webcontainer-api.io", // WebContainer dev server origin
     ],
 
     "media-src": [

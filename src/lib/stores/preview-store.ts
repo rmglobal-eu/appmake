@@ -8,17 +8,39 @@ export interface ConsoleEntry {
   timestamp: number;
 }
 
+export type PreviewStatus =
+  | "idle"
+  | "booting"      // WebContainer.boot()
+  | "mounting"     // Files being written to filesystem
+  | "installing"   // npm install running
+  | "starting"     // Vite dev server starting
+  | "ready"        // Preview visible
+  | "error"        // Error occurred
+  | "bundling";    // Legacy esbuild (share-side)
+
 interface PreviewStore {
-  status: "idle" | "bundling" | "ready" | "error";
+  status: PreviewStatus;
   errors: BundleError[];
   consoleLogs: ConsoleEntry[];
   lastBundleTime: number | null;
 
-  setStatus: (status: PreviewStore["status"]) => void;
+  // WebContainer-specific state
+  previewUrl: string | null;
+  progressMessage: string | null;
+  installOutput: string;
+
+  setStatus: (status: PreviewStatus) => void;
   setErrors: (errors: BundleError[]) => void;
   addConsoleEntry: (entry: Omit<ConsoleEntry, "id">) => void;
   clearConsole: () => void;
   setLastBundleTime: (ms: number) => void;
+
+  // WebContainer actions
+  setPreviewUrl: (url: string | null) => void;
+  setProgressMessage: (msg: string | null) => void;
+  appendInstallOutput: (line: string) => void;
+  clearInstallOutput: () => void;
+  resetPreview: () => void;
 }
 
 let logCounter = 0;
@@ -28,6 +50,9 @@ export const usePreviewStore = create<PreviewStore>((set) => ({
   errors: [],
   consoleLogs: [],
   lastBundleTime: null,
+  previewUrl: null,
+  progressMessage: null,
+  installOutput: "",
 
   setStatus: (status) => set({ status }),
   setErrors: (errors) => set({ errors }),
@@ -40,4 +65,20 @@ export const usePreviewStore = create<PreviewStore>((set) => ({
     })),
   clearConsole: () => set({ consoleLogs: [] }),
   setLastBundleTime: (ms) => set({ lastBundleTime: ms }),
+
+  setPreviewUrl: (url) => set({ previewUrl: url }),
+  setProgressMessage: (msg) => set({ progressMessage: msg }),
+  appendInstallOutput: (line) =>
+    set((state) => ({
+      installOutput: state.installOutput + line,
+    })),
+  clearInstallOutput: () => set({ installOutput: "" }),
+  resetPreview: () =>
+    set({
+      status: "idle",
+      errors: [],
+      previewUrl: null,
+      progressMessage: null,
+      installOutput: "",
+    }),
 }));

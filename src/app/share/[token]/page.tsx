@@ -72,7 +72,7 @@ export default function SharePage() {
       </header>
       <div className="relative flex-1">
         <div className="absolute inset-0">
-          <LivePreview />
+          <LivePreview forceEsbuild />
         </div>
       </div>
     </div>
