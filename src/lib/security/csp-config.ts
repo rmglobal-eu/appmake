@@ -1,7 +1,7 @@
 /**
  * Content Security Policy Configuration
  *
- * Returns CSP headers tailored for the AppMake v2 application.
+ * Returns CSP headers tailored for the AppMake application.
  * Balances security with the need to load CDN resources (Tailwind, fonts),
  * render blob: iframe previews, and communicate with backend services.
  */
