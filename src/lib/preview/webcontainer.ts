@@ -1,4 +1,8 @@
-import { WebContainer } from "@webcontainer/api";
+// NOTE: @webcontainer/api is imported DYNAMICALLY inside getWebContainer()
+// to avoid crashing the module in non-secure contexts (HTTP without COOP/COEP).
+
+type WebContainer = import("@webcontainer/api").WebContainer;
+type FileSystemTree = import("@webcontainer/api").FileSystemTree;
 
 let instance: WebContainer | null = null;
 let bootPromise: Promise<WebContainer> | null = null;
@@ -11,7 +15,7 @@ const SERVER_START_TIMEOUT = 30_000;
 
 /**
  * Check if WebContainers are supported in this browser.
- * Requires SharedArrayBuffer (needs COOP/COEP headers).
+ * Requires SharedArrayBuffer (needs COOP/COEP headers over HTTPS).
  */
 export function isSupported(): boolean {
   if (!supported) return false;
@@ -21,7 +25,7 @@ export function isSupported(): boolean {
 
 /**
  * Boot or return the singleton WebContainer instance.
- * Only one instance is allowed per origin.
+ * Dynamically imports @webcontainer/api to avoid crashes in non-secure contexts.
  */
 export async function getWebContainer(): Promise<WebContainer> {
   if (instance) return instance;
@@ -35,6 +39,7 @@ export async function getWebContainer(): Promise<WebContainer> {
     }, BOOT_TIMEOUT);
 
     try {
+      const { WebContainer } = await import("@webcontainer/api");
       const wc = await WebContainer.boot();
       clearTimeout(timer);
       instance = wc;
@@ -52,11 +57,8 @@ export async function getWebContainer(): Promise<WebContainer> {
 
 /**
  * Mount a complete FileSystemTree into the WebContainer.
- * Overwrites all existing files.
  */
-export async function mountProject(
-  tree: import("@webcontainer/api").FileSystemTree
-): Promise<void> {
+export async function mountProject(tree: FileSystemTree): Promise<void> {
   const wc = await getWebContainer();
   await wc.mount(tree);
 }
@@ -69,8 +71,6 @@ export async function writeFile(
   content: string
 ): Promise<void> {
   const wc = await getWebContainer();
-  // Ensure parent directories exist by writing the file
-  // WebContainer.fs.writeFile creates intermediate dirs
   await wc.fs.writeFile(path, content);
 }
 
@@ -85,7 +85,6 @@ export async function runInstall(
 
   const process = await wc.spawn("npm", ["install", "--prefer-offline"]);
 
-  // Pipe output
   process.output.pipeTo(
     new WritableStream({
       write(chunk) {
@@ -117,7 +116,6 @@ export async function startDevServer(
 ): Promise<void> {
   const wc = await getWebContainer();
 
-  // Kill existing dev server if running
   await stopDevServer();
 
   const process = await wc.spawn("npm", ["run", "dev"]);
@@ -131,7 +129,6 @@ export async function startDevServer(
     })
   );
 
-  // Wait for the server-ready event from WebContainer
   await new Promise<void>((resolve, reject) => {
     const timer = setTimeout(() => {
       reject(new Error("Dev server start timed out"));
