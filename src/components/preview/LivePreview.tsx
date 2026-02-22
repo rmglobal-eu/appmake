@@ -4,6 +4,7 @@ import { useEffect, useRef, useCallback } from "react";
 import { usePreviewBundler } from "@/hooks/usePreviewBundler";
 import { useWebContainerPreview } from "@/hooks/useWebContainerPreview";
 import { usePreviewStore } from "@/lib/stores/preview-store";
+import { useEditorStore } from "@/lib/stores/editor-store";
 import { useChatStore } from "@/lib/stores/chat-store";
 import { PreviewErrorOverlay } from "./PreviewErrorOverlay";
 import { PreviewLoadingScreen } from "./PreviewLoadingScreen";
@@ -130,25 +131,25 @@ export function LivePreview({
   // Determine rebuild function
   const rebuild = useEsbuild ? esbuild.rebuild : undefined;
 
-  // Determine if we should show the full-screen loading animation
-  const isLoading =
-    effectiveStatus !== "ready" &&
-    effectiveStatus !== "error" &&
-    effectiveStatus !== "idle";
+  // Do we actually have rendered content in the iframe?
+  const hasContent = useEsbuild
+    ? !!(esbuild.html && esbuild.status === "ready")
+    : !!(previewUrl);
 
-  const isGenerating = isStreaming && effectiveStatus !== "ready";
+  // Show loading screen when we don't have content but AI is generating or files exist
+  const hasFiles = useEditorStore.getState
+    ? Object.keys(useEditorStore.getState().generatedFiles).length > 0
+    : false;
+  const showLoadingScreen = !hasContent && (isStreaming || hasFiles);
 
-  const showLoadingScreen = isLoading || isGenerating;
+  // Map to a status for the loading screen animation
+  const loadingStatus: Parameters<typeof PreviewLoadingScreen>[0]["status"] =
+    isStreaming ? "generating"
+    : !useEsbuild ? status  // WebContainer lifecycle status from store
+    : effectiveStatus;
 
-  // Map to loading screen status
-  const loadingStatus = isGenerating && effectiveStatus === "idle"
-    ? "generating" as const
-    : isGenerating && effectiveStatus === "bundling"
-      ? "generating" as const
-      : effectiveStatus;
-
-  // No files yet — show empty state
-  if (effectiveStatus === "idle" && !esbuild.html && !previewUrl && !isStreaming) {
+  // No files, not streaming — empty state
+  if (!hasContent && !isStreaming && !hasFiles) {
     return (
       <div
         className={`flex h-full items-center justify-center bg-[#0a0a12] ${className}`}
