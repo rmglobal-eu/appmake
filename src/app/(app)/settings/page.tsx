@@ -30,6 +30,7 @@ import {
   Bell,
   KeyRound,
   Globe,
+  Check,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import AISettingsPanel from "@/components/settings/AISettings";
@@ -1027,12 +1028,12 @@ function GitHubSettings() {
 function LanguageSettings() {
   const t = useTranslations("settings");
   const locales = [
-    { code: "da", name: "Dansk", flag: "🇩🇰" },
-    { code: "sv", name: "Svenska", flag: "🇸🇪" },
-    { code: "en", name: "English", flag: "🇬🇧" },
-    { code: "es", name: "Español", flag: "🇪🇸" },
-    { code: "zh", name: "中文", flag: "🇨🇳" },
-    { code: "ar", name: "العربية", flag: "🇸🇦" },
+    { code: "da", name: "Dansk", region: "Danmark" },
+    { code: "sv", name: "Svenska", region: "Sverige" },
+    { code: "en", name: "English", region: "Global" },
+    { code: "es", name: "Español", region: "Global" },
+    { code: "zh", name: "中文", region: "简体中文" },
+    { code: "ar", name: "العربية", region: "RTL" },
   ];
 
   const currentLocale = document.cookie
@@ -1051,26 +1052,44 @@ function LanguageSettings() {
       <div className="mt-8">
         <SectionCard>
           <div className="p-6">
-            <h3 className="text-sm font-semibold text-white">Interface language</h3>
-            <p className="mt-0.5 text-sm text-white/40">Select the language for buttons, labels, and menus.</p>
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              {locales.map((locale) => (
-                <button
-                  key={locale.code}
-                  onClick={() => setLocale(locale.code)}
-                  className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-left transition-all ${
-                    currentLocale === locale.code
-                      ? "border-violet-500 bg-violet-500/10 text-white"
-                      : "border-white/10 text-white/60 hover:border-white/20 hover:bg-white/5 hover:text-white/80"
-                  }`}
-                >
-                  <span className="text-xl">{locale.flag}</span>
-                  <span className="text-sm font-medium">{locale.name}</span>
-                  {currentLocale === locale.code && (
-                    <span className="ml-auto text-xs text-violet-400">✓</span>
-                  )}
-                </button>
-              ))}
+            <div className="grid grid-cols-1 gap-2">
+              {locales.map((locale) => {
+                const isActive = currentLocale === locale.code;
+                return (
+                  <button
+                    key={locale.code}
+                    onClick={() => setLocale(locale.code)}
+                    className={`group flex items-center gap-4 rounded-xl border px-5 py-4 text-left transition-all ${
+                      isActive
+                        ? "border-violet-500/50 bg-violet-500/[0.08]"
+                        : "border-transparent hover:bg-white/[0.04]"
+                    }`}
+                  >
+                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-xs font-bold uppercase tracking-wider ${
+                      isActive
+                        ? "bg-violet-500/20 text-violet-400"
+                        : "bg-white/[0.06] text-white/40 group-hover:bg-white/[0.08] group-hover:text-white/50"
+                    }`}>
+                      {locale.code}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm font-medium ${isActive ? "text-white" : "text-white/70 group-hover:text-white/90"}`}>
+                        {locale.name}
+                      </p>
+                      <p className={`text-xs ${isActive ? "text-white/40" : "text-white/25 group-hover:text-white/35"}`}>
+                        {locale.region}
+                      </p>
+                    </div>
+                    <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition-all ${
+                      isActive
+                        ? "bg-violet-500 text-white"
+                        : "border border-white/15 group-hover:border-white/25"
+                    }`}>
+                      {isActive && <Check className="h-3 w-3" strokeWidth={3} />}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </SectionCard>
