@@ -96,7 +96,7 @@ export function DashboardChatInput({
   };
 
   return (
-    <div className="w-full max-w-2xl">
+    <div className="w-full max-w-3xl">
       <div className="rounded-[20px] border border-white/[0.08] bg-[#1e1e22] shadow-2xl transition-colors focus-within:border-white/15">
         {/* Textarea area */}
         <div className="relative">
@@ -105,7 +105,7 @@ export function DashboardChatInput({
             value={value}
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={handleKeyDown}
-            rows={1}
+            rows={2}
             disabled={loading}
             style={{ color: "#ffffff" }}
             className="w-full resize-none bg-transparent px-5 pt-4 pb-2 text-[15px] font-semibold placeholder-transparent outline-none disabled:opacity-50"

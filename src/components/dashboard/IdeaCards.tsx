@@ -67,7 +67,7 @@ export function IdeaCards({ onSelect }: { onSelect: (prompt: string) => void }) 
   };
 
   return (
-    <div className="flex flex-col items-center gap-3 w-full max-w-2xl">
+    <div className="flex flex-col items-center gap-3 w-full max-w-3xl">
       <div className="flex justify-center gap-2">
         {loading
           ? Array.from({ length: 6 }).map((_, i) => (
