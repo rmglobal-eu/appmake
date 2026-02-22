@@ -43,6 +43,15 @@ export function LivePreview({
   const [hadFirstBuild, setHadFirstBuild] = useState(false);
   // Track runtime errors from iframe (separate from build errors)
   const [hasRuntimeError, setHasRuntimeError] = useState(false);
+  // Auto-fix: only attempt once per streaming session to avoid infinite loops
+  const autoFixAttemptedRef = useRef(false);
+
+  // Reset auto-fix flag when new streaming session starts
+  useEffect(() => {
+    if (isStreaming) {
+      autoFixAttemptedRef.current = false;
+    }
+  }, [isStreaming]);
 
   // Clear runtime errors when a new build starts
   useEffect(() => {
@@ -113,10 +122,11 @@ export function LivePreview({
       switch (data.type) {
         case "preview-error":
           if (data.error) {
+            const errorMsg = data.error.message || "Unknown error";
             setHasRuntimeError(true);
             setStoreErrors([
               {
-                text: data.error.message || "Unknown error",
+                text: errorMsg,
                 location: data.error.line
                   ? {
                       file: data.error.source || "unknown",
@@ -126,6 +136,22 @@ export function LivePreview({
                   : undefined,
               },
             ]);
+
+            // Auto-fix: send error to AI if not streaming and haven't attempted yet
+            const streaming = useChatStore.getState().isStreaming;
+            if (!streaming && !autoFixAttemptedRef.current) {
+              autoFixAttemptedRef.current = true;
+              // Small delay so user can see the error briefly
+              setTimeout(() => {
+                window.dispatchEvent(
+                  new CustomEvent("appmake:auto-fix", {
+                    detail: {
+                      prompt: `The preview has a runtime error that needs to be fixed:\n\n\`${errorMsg}\`\n\nPlease fix this error in the code.`,
+                    },
+                  })
+                );
+              }, 1500);
+            }
           }
           break;
 

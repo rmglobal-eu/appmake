@@ -391,6 +391,18 @@ export function ChatPanel({ chatId, projectId, initialMessages = [] }: ChatPanel
     return () => window.removeEventListener("appmake:initial-prompt", handler);
   }, [handleSend]);
 
+  // Auto-fix: listen for runtime errors from preview and send fix request to AI
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const prompt = (e as CustomEvent<{ prompt: string }>).detail?.prompt;
+      if (prompt && !isStreaming) {
+        handleSend(prompt);
+      }
+    };
+    window.addEventListener("appmake:auto-fix", handler);
+    return () => window.removeEventListener("appmake:auto-fix", handler);
+  }, [handleSend, isStreaming]);
+
   // Cleanup SSE on unmount
   useEffect(() => {
     return () => {
