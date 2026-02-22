@@ -286,12 +286,42 @@ export async function bundle(
     }
   }
 
+  const ENTRY_KEY = "__entry__.tsx";
+
   if (entryInfo.isSelfMounting) {
-    // main.tsx/index.tsx already has createRoot — use it directly
-    entryPoint = entryInfo.file;
+    // main.tsx/index.tsx already has createRoot.
+    // Rewrite it to wrap the rendered element with our error boundary.
+    // We replace createRoot calls to use our patched version.
+    const userCode = allFiles[entryInfo.file];
+    allFiles[ENTRY_KEY] = `
+import { createRoot as __origCR } from "react-dom/client";
+import { Component, createElement } from "react";
+
+class __EB extends Component {
+  constructor(p) { super(p); this.state = { e: null }; }
+  static getDerivedStateFromError(e) { return { e }; }
+  componentDidCatch(e) {
+    window.parent.postMessage({ type: "preview-error", error: { message: e.message, stack: e.stack } }, "*");
+  }
+  render() {
+    if (this.state.e) return createElement("div", { style: { background: "#0a0a12", minHeight: "100vh" } });
+    return this.props.children;
+  }
+}
+
+function createRoot(c, o) {
+  const r = __origCR(c, o);
+  const _render = r.render.bind(r);
+  r.render = (el) => _render(createElement(__EB, null, el));
+  return r;
+}
+
+${userCode.replace(/import\s*\{[^}]*createRoot[^}]*\}\s*from\s*["']react-dom\/client["'];?/g, "// createRoot provided by entry wrapper")}
+`;
+    // Remove original file so esbuild doesn't process it separately
+    delete allFiles[entryInfo.file];
   } else {
-    // App.tsx needs a synthetic wrapper to mount it — includes Error Boundary
-    const ENTRY_KEY = "__entry__.tsx";
+    // App.tsx needs a synthetic wrapper to mount it
     allFiles[ENTRY_KEY] = `
 import { createRoot } from "react-dom/client";
 import { Component } from "react";
@@ -300,7 +330,7 @@ import * as _M from "./${entryInfo.file}";
 const App = _M.default || _M.App || _M.Main || Object.values(_M).find(v => typeof v === "function") || (() => null);
 
 class EB extends Component {
-  constructor(props) { super(props); this.state = { error: null, info: null }; }
+  constructor(props) { super(props); this.state = { error: null }; }
   static getDerivedStateFromError(error) { return { error }; }
   componentDidCatch(error, info) {
     window.parent.postMessage({
@@ -318,8 +348,9 @@ class EB extends Component {
 
 createRoot(document.getElementById("root")).render(<EB><App /></EB>);
 `;
-    entryPoint = ENTRY_KEY;
   }
+
+  entryPoint = ENTRY_KEY;
 
   const externals = new Set<string>();
 

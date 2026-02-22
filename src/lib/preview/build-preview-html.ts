@@ -54,7 +54,15 @@ ${css}
 <!-- Error handler + Console interceptor -->
 <script>
 // --- Error handler ---
+function __hidePreview() {
+  document.body.style.background = "#0a0a12";
+  document.body.style.color = "transparent";
+  var r = document.getElementById("root");
+  if (r) r.style.display = "none";
+}
+
 window.onerror = function(message, source, lineno, colno, error) {
+  __hidePreview();
   window.parent.postMessage({
     type: "preview-error",
     error: {
@@ -69,6 +77,7 @@ window.onerror = function(message, source, lineno, colno, error) {
 
 window.addEventListener("unhandledrejection", function(event) {
   var reason = event.reason || {};
+  __hidePreview();
   window.parent.postMessage({
     type: "preview-error",
     error: {

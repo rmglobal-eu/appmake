@@ -201,7 +201,14 @@ export function generateIndexHtml(entryFile: string): string {
   <script src="https://cdn.tailwindcss.com" async></script>
   <!-- Error handler + Console interceptor -->
   <script>
+    function __hidePreview() {
+      document.body.style.background = "#0a0a12";
+      document.body.style.color = "transparent";
+      var r = document.getElementById("root");
+      if (r) r.style.display = "none";
+    }
     window.onerror = function(message, source, lineno, colno, error) {
+      __hidePreview();
       window.parent.postMessage({
         type: "preview-error",
         error: {
@@ -215,6 +222,7 @@ export function generateIndexHtml(entryFile: string): string {
     };
     window.addEventListener("unhandledrejection", function(event) {
       var reason = event.reason || {};
+      __hidePreview();
       window.parent.postMessage({
         type: "preview-error",
         error: {
