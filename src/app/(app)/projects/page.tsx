@@ -319,41 +319,112 @@ export default function ProjectsPage() {
                 <Loader2 className="h-6 w-6 animate-spin text-white/30" />
               </div>
             ) : hasNoProjects ? (
-              /* Empty state — no projects at all */
-              <div className="flex flex-col items-center justify-center py-16">
-                {/* Animated orb */}
-                <div className="relative mb-8">
+              /* Empty state — visual mockup of project creation */
+              <div className="flex flex-col items-center justify-center py-10">
+                {/* Animated project builder illustration */}
+                <div className="relative mb-10 h-64 w-96">
+                  {/* Background glow */}
                   <div
-                    className="absolute -inset-8 rounded-full opacity-25 blur-3xl"
-                    style={{
-                      background: "conic-gradient(from 0deg, #6366f1, #ff1493, #f59e0b, #6366f1)",
-                      animation: "spin 6s linear infinite",
-                    }}
+                    className="absolute inset-0 rounded-3xl opacity-15 blur-3xl"
+                    style={{ background: "radial-gradient(ellipse at center, #6366f1 0%, #ff1493 40%, transparent 70%)" }}
                   />
-                  <div className="absolute -inset-10" style={{ animation: "spin 10s linear infinite" }}>
-                    <div className="absolute left-1/2 top-0 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-violet-400/60" />
-                    <div className="absolute bottom-0 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-pink-400/40" />
-                  </div>
-                  <div className="absolute -inset-10" style={{ animation: "spin 14s linear infinite reverse" }}>
-                    <div className="absolute right-0 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-yellow-400/50" />
-                  </div>
+
+                  {/* Browser mockup — main */}
                   <div
-                    className="relative flex h-24 w-24 items-center justify-center rounded-full border border-white/10 bg-gradient-to-br from-white/[0.08] to-white/[0.02] backdrop-blur-sm"
-                    style={{ animation: "fadeInUp 600ms ease-out" }}
+                    className="absolute left-1/2 top-2 z-10 w-64 -translate-x-1/2 overflow-hidden rounded-xl border border-white/10 bg-[#1a1a1e] shadow-2xl shadow-black/40"
+                    style={{ animation: "fadeInUp 700ms ease-out 100ms both" }}
                   >
-                    <Sparkles className="h-10 w-10 text-violet-400/70" style={{ animation: "logoPulse 2.5s ease-in-out infinite" }} />
+                    {/* Browser chrome */}
+                    <div className="flex items-center gap-1.5 border-b border-white/[0.06] px-3 py-2">
+                      <div className="h-2 w-2 rounded-full bg-red-400/40" />
+                      <div className="h-2 w-2 rounded-full bg-yellow-400/40" />
+                      <div className="h-2 w-2 rounded-full bg-green-400/40" />
+                      <div className="ml-2 h-4 flex-1 rounded-md bg-white/[0.06]" />
+                    </div>
+                    {/* Page content mockup */}
+                    <div className="p-4">
+                      {/* Nav */}
+                      <div className="flex items-center justify-between">
+                        <div className="h-2.5 w-14 rounded-full bg-white/10" />
+                        <div className="flex gap-2">
+                          <div className="h-2 w-8 rounded-full bg-white/[0.06]" />
+                          <div className="h-2 w-8 rounded-full bg-white/[0.06]" />
+                          <div className="h-5 w-12 rounded-md bg-violet-600/40" />
+                        </div>
+                      </div>
+                      {/* Hero */}
+                      <div className="mt-5 flex flex-col items-center">
+                        <div className="h-3 w-32 rounded-full bg-white/10" />
+                        <div className="mt-1.5 h-2 w-24 rounded-full bg-white/[0.05]" />
+                        <div className="mt-3 h-6 w-20 rounded-lg bg-gradient-to-r from-violet-600/50 to-pink-600/50" />
+                      </div>
+                      {/* Cards grid */}
+                      <div className="mt-4 grid grid-cols-3 gap-2">
+                        <div className="h-10 rounded-md bg-white/[0.04]" />
+                        <div className="h-10 rounded-md bg-white/[0.04]" />
+                        <div className="h-10 rounded-md bg-white/[0.04]" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Floating code snippet — left */}
+                  <div
+                    className="absolute left-0 top-16 w-32 rounded-lg border border-white/[0.06] bg-[#1a1a1e]/90 p-2.5 font-mono text-[8px] leading-relaxed backdrop-blur-sm"
+                    style={{
+                      transform: "rotate(-4deg)",
+                      animation: "fadeInUp 700ms ease-out 300ms both",
+                    }}
+                  >
+                    <span className="text-pink-400/60">{"<"}</span>
+                    <span className="text-violet-400/60">Button</span>
+                    <span className="text-pink-400/60">{">"}</span>
+                    <br />
+                    <span className="text-white/30 ml-2">Get started</span>
+                    <br />
+                    <span className="text-pink-400/60">{"</"}</span>
+                    <span className="text-violet-400/60">Button</span>
+                    <span className="text-pink-400/60">{">"}</span>
+                  </div>
+
+                  {/* Floating AI sparkle — right */}
+                  <div
+                    className="absolute right-2 top-12 flex items-center gap-1.5 rounded-lg border border-white/[0.06] bg-[#1a1a1e]/90 px-2.5 py-2 backdrop-blur-sm"
+                    style={{
+                      transform: "rotate(3deg)",
+                      animation: "fadeInUp 700ms ease-out 400ms both",
+                    }}
+                  >
+                    <Sparkles className="h-3.5 w-3.5 text-violet-400/60" style={{ animation: "logoPulse 2s ease-in-out infinite" }} />
+                    <span className="text-[9px] font-medium text-white/30">AI Building...</span>
+                  </div>
+
+                  {/* Floating component block — bottom right */}
+                  <div
+                    className="absolute bottom-4 right-4 w-28 rounded-lg border border-white/[0.06] bg-[#1a1a1e]/90 p-2 backdrop-blur-sm"
+                    style={{
+                      transform: "rotate(2deg)",
+                      animation: "fadeInUp 700ms ease-out 500ms both",
+                    }}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <div className="h-5 w-5 rounded-md bg-gradient-to-br from-violet-600/40 to-pink-600/40" />
+                      <div>
+                        <div className="h-1.5 w-12 rounded-full bg-white/10" />
+                        <div className="mt-0.5 h-1 w-8 rounded-full bg-white/[0.05]" />
+                      </div>
+                    </div>
                   </div>
                 </div>
 
                 <h2
                   className="text-xl font-semibold text-white/80"
-                  style={{ animation: "fadeInUp 600ms ease-out 100ms both" }}
+                  style={{ animation: "fadeInUp 600ms ease-out 600ms both" }}
                 >
                   Start building something amazing
                 </h2>
                 <p
                   className="mt-2 max-w-md text-center text-sm text-white/40"
-                  style={{ animation: "fadeInUp 600ms ease-out 200ms both" }}
+                  style={{ animation: "fadeInUp 600ms ease-out 700ms both" }}
                 >
                   Create your first project and let AI help you build it. From landing pages to full-stack apps, the possibilities are endless.
                 </p>
@@ -361,7 +432,7 @@ export default function ProjectsPage() {
                   onClick={handleCreateProject}
                   disabled={creating}
                   className="mt-6 flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-pink-600 px-6 py-2.5 text-sm font-semibold text-white transition-all hover:shadow-lg hover:shadow-violet-500/25 active:scale-[0.98]"
-                  style={{ animation: "fadeInUp 600ms ease-out 300ms both" }}
+                  style={{ animation: "fadeInUp 600ms ease-out 800ms both" }}
                 >
                   {creating ? (
                     <Loader2 className="h-4 w-4 animate-spin" />

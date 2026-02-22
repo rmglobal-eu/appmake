@@ -257,51 +257,115 @@ export default function StarredPage() {
                 <Loader2 className="h-6 w-6 animate-spin text-white/30" />
               </div>
             ) : isEmpty ? (
-              /* Empty state — animated */
-              <div className="flex flex-col items-center justify-center py-16">
-                {/* Animated orb with star */}
-                <div className="relative mb-8">
-                  {/* Gradient glow ring */}
+              /* Empty state — visual mockup */
+              <div className="flex flex-col items-center justify-center py-10">
+                {/* Floating project cards illustration */}
+                <div className="relative mb-10 h-56 w-80">
+                  {/* Background glow */}
                   <div
-                    className="absolute -inset-6 rounded-full opacity-30 blur-2xl"
-                    style={{
-                      background: "radial-gradient(circle, #ff1493 0%, #6366f1 50%, transparent 70%)",
-                      animation: "logoPulse 3s ease-in-out infinite",
-                    }}
+                    className="absolute inset-0 rounded-3xl opacity-20 blur-3xl"
+                    style={{ background: "radial-gradient(ellipse at center, #6366f1 0%, transparent 70%)" }}
                   />
-                  {/* Orbiting dots */}
-                  <div className="absolute -inset-8" style={{ animation: "spin 8s linear infinite" }}>
-                    <div className="absolute left-1/2 top-0 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-pink-400/60" />
-                    <div className="absolute bottom-0 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-violet-400/40" />
-                  </div>
-                  <div className="absolute -inset-8" style={{ animation: "spin 12s linear infinite reverse" }}>
-                    <div className="absolute right-0 top-1/2 h-1 w-1 -translate-y-1/2 rounded-full bg-yellow-400/50" />
-                  </div>
-                  {/* Main circle */}
+
+                  {/* Card 1 — back left, tilted */}
                   <div
-                    className="relative flex h-20 w-20 items-center justify-center rounded-full border border-white/10 bg-gradient-to-br from-white/[0.08] to-white/[0.02] backdrop-blur-sm"
-                    style={{ animation: "fadeInUp 600ms ease-out" }}
+                    className="absolute left-2 top-8 w-40 rounded-xl border border-white/[0.06] bg-white/[0.03] p-3 backdrop-blur-sm"
+                    style={{
+                      transform: "rotate(-6deg)",
+                      animation: "fadeInUp 700ms ease-out 100ms both",
+                    }}
                   >
-                    <Star className="h-8 w-8 text-yellow-400/70" style={{ animation: "logoPulse 2.5s ease-in-out infinite" }} />
+                    <div className="h-16 rounded-lg bg-gradient-to-br from-[#1e1e2e] to-[#2a2a3a]" />
+                    <div className="mt-2 flex items-center justify-between">
+                      <div>
+                        <div className="h-2 w-16 rounded-full bg-white/10" />
+                        <div className="mt-1 h-1.5 w-10 rounded-full bg-white/5" />
+                      </div>
+                      <Star className="h-3.5 w-3.5 text-white/10" />
+                    </div>
+                  </div>
+
+                  {/* Card 2 — center front, featured with star */}
+                  <div
+                    className="absolute left-1/2 top-4 z-10 w-44 -translate-x-1/2 rounded-xl border border-white/10 bg-white/[0.06] p-3 shadow-2xl shadow-black/30 backdrop-blur-sm"
+                    style={{ animation: "fadeInUp 700ms ease-out 200ms both" }}
+                  >
+                    <div className="relative h-20 rounded-lg bg-gradient-to-br from-violet-900/40 to-pink-900/30">
+                      <div className="flex h-full items-center justify-center">
+                        <img src="/logo-dark.svg" alt="" className="h-6 opacity-20" />
+                      </div>
+                      {/* Animated star */}
+                      <div className="absolute right-1.5 top-1.5">
+                        <Star
+                          className="h-4 w-4 fill-yellow-400 text-yellow-400"
+                          style={{ animation: "logoPulse 2s ease-in-out infinite" }}
+                        />
+                      </div>
+                    </div>
+                    <div className="mt-2.5 flex items-center gap-1.5">
+                      <div className="h-4 w-4 rounded-full bg-violet-600" />
+                      <div>
+                        <div className="h-2 w-20 rounded-full bg-white/15" />
+                        <div className="mt-1 h-1.5 w-12 rounded-full bg-white/5" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 3 — back right, tilted */}
+                  <div
+                    className="absolute right-2 top-8 w-40 rounded-xl border border-white/[0.06] bg-white/[0.03] p-3 backdrop-blur-sm"
+                    style={{
+                      transform: "rotate(6deg)",
+                      animation: "fadeInUp 700ms ease-out 300ms both",
+                    }}
+                  >
+                    <div className="h-16 rounded-lg bg-gradient-to-br from-[#1e1e2e] to-[#2a2a3a]" />
+                    <div className="mt-2 flex items-center justify-between">
+                      <div>
+                        <div className="h-2 w-14 rounded-full bg-white/10" />
+                        <div className="mt-1 h-1.5 w-9 rounded-full bg-white/5" />
+                      </div>
+                      <Star className="h-3.5 w-3.5 text-white/10" />
+                    </div>
+                  </div>
+
+                  {/* Floating star particles */}
+                  <div
+                    className="absolute left-12 top-2 text-yellow-400/30"
+                    style={{ animation: "bounce 2s ease-in-out infinite" }}
+                  >
+                    <Star className="h-3 w-3 fill-current" />
+                  </div>
+                  <div
+                    className="absolute right-14 top-0 text-yellow-400/20"
+                    style={{ animation: "bounce 2.5s ease-in-out infinite 0.5s" }}
+                  >
+                    <Star className="h-2.5 w-2.5 fill-current" />
+                  </div>
+                  <div
+                    className="absolute bottom-10 left-8 text-yellow-400/15"
+                    style={{ animation: "bounce 3s ease-in-out infinite 1s" }}
+                  >
+                    <Star className="h-2 w-2 fill-current" />
                   </div>
                 </div>
 
                 <h2
                   className="text-lg font-semibold text-white/80"
-                  style={{ animation: "fadeInUp 600ms ease-out 100ms both" }}
+                  style={{ animation: "fadeInUp 600ms ease-out 400ms both" }}
                 >
                   No starred projects yet
                 </h2>
                 <p
                   className="mt-2 max-w-sm text-center text-sm text-white/40"
-                  style={{ animation: "fadeInUp 600ms ease-out 200ms both" }}
+                  style={{ animation: "fadeInUp 600ms ease-out 500ms both" }}
                 >
-                  Star projects to access them quickly from any workspace. Click the star icon on any project to get started.
+                  Star your favorite projects for quick access. Click the star icon on any project card to pin it here.
                 </p>
                 <button
                   onClick={() => router.push("/projects")}
                   className="mt-6 rounded-xl bg-gradient-to-r from-violet-600 to-pink-600 px-6 py-2.5 text-sm font-semibold text-white transition-all hover:shadow-lg hover:shadow-violet-500/25 active:scale-[0.98]"
-                  style={{ animation: "fadeInUp 600ms ease-out 300ms both" }}
+                  style={{ animation: "fadeInUp 600ms ease-out 600ms both" }}
                 >
                   Browse projects
                 </button>
