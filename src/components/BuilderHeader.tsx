@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/tooltip";
 import {
   Eye,
-  Pencil,
   Code2,
   MoreHorizontal,
   Monitor,
@@ -174,12 +173,6 @@ export function BuilderHeader({ onRefresh, onShare, onPublish, onGit, onSupabase
             badge={errorCount > 0 ? errorCount : undefined}
           />
           <ViewToggleButton
-            active={viewMode === "visual-editor"}
-            onClick={() => setViewMode("visual-editor")}
-            icon={<Pencil className="h-3 w-3" />}
-            label="Visual"
-          />
-          <ViewToggleButton
             active={viewMode === "code"}
             onClick={() => setViewMode("code")}
             icon={<Code2 className="h-3 w-3" />}
@@ -201,7 +194,7 @@ export function BuilderHeader({ onRefresh, onShare, onPublish, onGit, onSupabase
         <div className="flex-1" />
 
         {/* === Center-right: Preview mode toggle + Device viewport + URL === */}
-        {(viewMode === "preview" || viewMode === "visual-editor") && (
+        {viewMode === "preview" && (
           <div className="hidden md:flex items-center gap-1 mr-2">
             {/* Quick Preview / Full Sandbox toggle */}
             <div className="flex items-center rounded-md border border-white/10 bg-white/5 p-0.5 mr-1">

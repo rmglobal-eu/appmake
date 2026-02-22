@@ -22,7 +22,6 @@ import {
   Plus,
   ImageIcon,
   FileText,
-  Pencil,
   ListChecks,
   Mic,
 } from "lucide-react";
@@ -64,8 +63,7 @@ export function ChatInput({
   const [isDragOver, setIsDragOver] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { planMode, setPlanMode, visualEditorActive, setVisualEditorActive } =
-    useBuilderStore();
+  const { planMode, setPlanMode } = useBuilderStore();
   const [usage, setUsage] = useState<UsageData | null>(null);
 
   useEffect(() => {
@@ -159,11 +157,9 @@ export function ChatInput({
 
   const comingSoon = () => toast("Coming soon!", { duration: 1500 });
 
-  const placeholder = visualEditorActive
-    ? "Ask Appmake to modify the selected element..."
-    : planMode
-      ? "Describe what you want — AI will plan first..."
-      : "Ask Appmake to build something...";
+  const placeholder = planMode
+    ? "Describe what you want — AI will plan first..."
+    : "Ask Appmake to build something...";
 
   return (
     <TooltipProvider delayDuration={300}>
@@ -304,24 +300,6 @@ export function ChatInput({
           </DropdownMenu>
 
           <div className="flex-1" />
-
-          {/* Visual edits toggle */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                className={`flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-medium transition-colors ${
-                  visualEditorActive
-                    ? "bg-gradient-to-r from-violet-600 to-pink-600 text-white"
-                    : "text-white/40 hover:text-white/70 hover:bg-white/10"
-                }`}
-                onClick={() => setVisualEditorActive(!visualEditorActive)}
-              >
-                <Pencil className="h-3 w-3" />
-                Visual edits
-              </button>
-            </TooltipTrigger>
-            <TooltipContent>Click elements in preview to edit visually</TooltipContent>
-          </Tooltip>
 
           {/* Plan toggle */}
           <Tooltip>
