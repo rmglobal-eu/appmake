@@ -6,6 +6,7 @@ import { CodeEditor } from "@/components/editor/CodeEditor";
 import { useEditorStore, buildFileTree } from "@/lib/stores/editor-store";
 import { useBuilderStore } from "@/lib/stores/builder-store";
 import { useSandboxStore } from "@/lib/stores/sandbox-store";
+import { useChatStore } from "@/lib/stores/chat-store";
 import { Terminal } from "@/components/terminal/Terminal";
 import { TerminalTabs } from "@/components/terminal/TerminalTabs";
 import { useTerminalStore } from "@/lib/stores/terminal-store";
@@ -14,6 +15,7 @@ import { LivePreview } from "@/components/preview/LivePreview";
 import { ConsolePanel } from "@/components/preview/ConsolePanel";
 import { PanelResizer } from "./PanelResizer";
 import { TerminalSquare } from "lucide-react";
+import { PreviewLoader } from "./PreviewLoader";
 
 interface WorkbenchProps {
   refreshKey?: number;
@@ -47,12 +49,10 @@ export function Workbench({ refreshKey = 0 }: WorkbenchProps) {
     [generatedFiles, openFile]
   );
 
+  const { isStreaming } = useChatStore();
+
   if (fileCount === 0) {
-    return (
-      <div className="relative flex h-full items-center justify-center">
-        <p className="text-sm text-muted-foreground">No preview available</p>
-      </div>
-    );
+    return <PreviewLoader isStreaming={isStreaming} />;
   }
 
   // Code view
