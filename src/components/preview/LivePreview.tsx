@@ -34,6 +34,7 @@ export function LivePreview({
     setErrors: setStoreErrors,
   } = usePreviewStore();
   const isStreaming = useChatStore((s) => s.isStreaming);
+  const messageCount = useChatStore((s) => s.messages.length);
   const fileCount = useEditorStore((s) => Object.keys(s.generatedFiles).length);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const blobUrlRef = useRef<string | null>(null);
@@ -151,32 +152,16 @@ export function LivePreview({
   // Determine rebuild function
   const rebuild = useEsbuild ? esbuild.rebuild : undefined;
 
-  // Show loading screen:
-  // 1. AI is streaming and we haven't had a first successful build yet
-  // 2. WebContainer is in a loading state (booting/mounting/installing/starting)
-  // 3. Files exist but no build has completed yet
+  // Show loading screen when we don't have a completed build yet
   const wcLoading = !useEsbuild && ["booting", "mounting", "installing", "starting"].includes(status);
-  const showLoadingScreen =
-    (isStreaming && !hadFirstBuild) ||
-    wcLoading ||
-    (fileCount > 0 && !hadFirstBuild && !isStreaming);
+  const showLoadingScreen = !hadFirstBuild;
 
   // Map to a status for the loading screen animation
   const loadingStatus: Parameters<typeof PreviewLoadingScreen>[0]["status"] =
-    isStreaming && !wcLoading ? "generating"
-    : wcLoading ? status
-    : "bundling";
-
-  // No files, not streaming, no previous build — empty state
-  if (fileCount === 0 && !isStreaming && !hadFirstBuild) {
-    return (
-      <div
-        className={`flex h-full items-center justify-center bg-[#0a0a12] ${className}`}
-      >
-        <p className="text-sm text-white/30">No preview available</p>
-      </div>
-    );
-  }
+    wcLoading ? status
+    : isStreaming ? "generating"
+    : fileCount > 0 ? "bundling"
+    : "idle";
 
   return (
     <div className={`relative h-full w-full ${className}`}>

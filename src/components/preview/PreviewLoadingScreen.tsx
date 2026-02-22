@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import type { PreviewStatus } from "@/lib/stores/preview-store";
 
 interface PreviewLoadingScreenProps {
-  status: PreviewStatus | "generating";
+  status: PreviewStatus | "generating" | "idle";
   progressMessage?: string | null;
 }
 
@@ -166,25 +166,28 @@ export function PreviewLoadingScreen({
 
       {/* Status text */}
       <p className="text-sm text-white/50 mb-8 h-5">
-        {progressMessage || STEPS[activeStep]?.label || "Building"}
-        {dots}
+        {status === "idle"
+          ? "Klar til at bygge"
+          : (progressMessage || STEPS[activeStep]?.label || "Building") + dots}
       </p>
 
-      {/* Step indicators */}
-      <div className="flex items-center gap-1.5">
-        {STEPS.map((step, i) => (
-          <div
-            key={step.key}
-            className={`h-1 rounded-full transition-all duration-500 ${
-              i < activeStep
-                ? "w-6 bg-gradient-to-r from-pink-500 to-indigo-500"
-                : i === activeStep
-                  ? "w-8 bg-gradient-to-r from-pink-500 to-indigo-500 animate-pulse"
-                  : "w-4 bg-white/10"
-            }`}
-          />
-        ))}
-      </div>
+      {/* Step indicators — hide when idle */}
+      {status !== "idle" && (
+        <div className="flex items-center gap-1.5">
+          {STEPS.map((step, i) => (
+            <div
+              key={step.key}
+              className={`h-1 rounded-full transition-all duration-500 ${
+                i < activeStep
+                  ? "w-6 bg-gradient-to-r from-pink-500 to-indigo-500"
+                  : i === activeStep
+                    ? "w-8 bg-gradient-to-r from-pink-500 to-indigo-500 animate-pulse"
+                    : "w-4 bg-white/10"
+              }`}
+            />
+          ))}
+        </div>
+      )}
 
       {/* CSS Animations */}
       <style>{`
