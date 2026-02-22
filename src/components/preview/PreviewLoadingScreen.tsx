@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import type { PreviewStatus } from "@/lib/stores/preview-store";
 
 interface PreviewLoadingScreenProps {
-  status: PreviewStatus | "generating" | "idle";
+  status: PreviewStatus | "generating" | "idle" | "fixing";
   progressMessage?: string | null;
 }
 
@@ -15,6 +15,7 @@ const STEPS = [
   { key: "installing", label: "Installing packages", emoji: "~" },
   { key: "starting", label: "Starting dev server", emoji: "~" },
   { key: "bundling", label: "Bundling", emoji: "~" },
+  { key: "fixing", label: "Fixing error", emoji: "~" },
 ] as const;
 
 const FRIENDLY_MESSAGES = [
@@ -50,7 +51,8 @@ export function PreviewLoadingScreen({
 
   const activeStep = getActiveStep(status);
   const isIdle = status === "idle";
-  const progress = isIdle ? 0 : Math.round(((activeStep + 1) / STEPS.length) * 100);
+  const isFixing = status === "fixing";
+  const progress = isIdle || isFixing ? 0 : Math.round(((activeStep + 1) / STEPS.length) * 100);
 
   return (
     <div className="absolute inset-0 z-10 flex flex-col items-center justify-center overflow-hidden">
@@ -129,11 +131,37 @@ export function PreviewLoadingScreen({
           className="text-[15px] text-white/35 mb-8 loader-handwriting"
           style={{ fontFamily: "var(--font-hand)" }}
         >
-          {isIdle ? "Ready to create something great" : friendlyMessage}
+          {isIdle ? "Ready to create something great" : isFixing ? "Fixing a small issue" : friendlyMessage}
         </p>
 
+        {/* Fixing state — simple pulsing card */}
+        {isFixing && (
+          <div className="loader-card-appear">
+            <div
+              className="relative rounded-2xl border border-white/[0.08] px-6 py-4 min-w-[240px]"
+              style={{
+                background: "rgba(255,255,255,0.03)",
+                backdropFilter: "blur(20px)",
+              }}
+            >
+              <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
+                <div className="absolute inset-0 loader-shimmer" />
+              </div>
+              <div className="relative flex items-center gap-3">
+                <div className="relative flex items-center justify-center w-5 h-5">
+                  <div className="absolute inset-0 rounded-full bg-amber-500/20 animate-ping" style={{ animationDuration: "2s" }} />
+                  <div className="w-2 h-2 rounded-full bg-gradient-to-r from-amber-500 to-pink-500" />
+                </div>
+                <span className="text-[13px] text-white/70" style={{ fontFamily: "var(--font-sans)" }}>
+                  Fixing error{dots}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Glass card with status */}
-        {!isIdle && (
+        {!isIdle && !isFixing && (
           <div className="loader-card-appear">
             <div
               className="relative rounded-2xl border border-white/[0.08] px-6 py-4 min-w-[240px]"

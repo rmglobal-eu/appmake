@@ -310,13 +310,7 @@ class EB extends Component {
   }
   render() {
     if (this.state.error) {
-      return (
-        <div style={{padding:"24px",color:"#ff6b6b",fontFamily:"ui-monospace,monospace",fontSize:"13px",background:"#1a1a2e",minHeight:"100vh",overflow:"auto"}}>
-          <div style={{marginBottom:"16px",fontSize:"15px",fontWeight:600,color:"#ff8a8a"}}>Runtime Error</div>
-          <pre style={{whiteSpace:"pre-wrap",wordBreak:"break-word",margin:0,lineHeight:1.6,color:"#ff6b6b"}}>{this.state.error.message}</pre>
-          <pre style={{whiteSpace:"pre-wrap",wordBreak:"break-word",margin:"12px 0 0",lineHeight:1.4,color:"#666",fontSize:"11px"}}>{this.state.error.stack}</pre>
-        </div>
-      );
+      return <div style={{background:"#0a0a12",minHeight:"100vh"}} />;
     }
     return this.props.children;
   }

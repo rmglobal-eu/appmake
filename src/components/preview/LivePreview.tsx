@@ -209,9 +209,15 @@ export function LivePreview({
         />
       )}
 
-      {/* Error overlay — show for build errors AND runtime errors (not during streaming) */}
+      {/* Branded loader when runtime error detected (AI is auto-fixing) */}
+      {hasRuntimeError && !showLoadingScreen && (
+        <PreviewLoadingScreen status="fixing" />
+      )}
+
+      {/* Error overlay — only for build errors when AI is NOT auto-fixing */}
       {!isStreaming &&
-        (effectiveStatus === "error" || hasRuntimeError) &&
+        !hasRuntimeError &&
+        effectiveStatus === "error" &&
         errors.length > 0 && (
           <PreviewErrorOverlay errors={errors} onRetry={rebuild} />
         )}
