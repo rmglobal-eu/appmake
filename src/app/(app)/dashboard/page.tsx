@@ -68,7 +68,7 @@ export default function DashboardPage() {
           {/* Scrollable content */}
           <div className="flex-1 overflow-y-auto">
             {/* Hero area */}
-            <div className="flex flex-col items-center px-4 pt-[18vh] pb-12 gap-8">
+            <div className="flex min-h-[calc(100vh-80px)] flex-col items-center justify-center gap-8 px-4">
               <TypingHeading name={firstName} />
               <DashboardChatInput
                 externalPrompt={selectedIdea}
@@ -78,7 +78,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Project tabs in dark container */}
-            <div className="relative z-10 w-full px-10 pb-10">
+            <div className="relative z-10 w-full px-10 pb-10 mt-10">
               <div className="rounded-2xl bg-[#1a1a1e] p-5 shadow-2xl">
                 <ProjectTabs projects={projects} userName={session.user?.name || firstName} />
               </div>
