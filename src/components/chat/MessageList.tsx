@@ -100,6 +100,16 @@ export function MessageList({
       el.scrollHeight - el.scrollTop - el.clientHeight < 80;
   }, []);
 
+  // Scroll to bottom on initial load (when messages are already present)
+  useEffect(() => {
+    if (messages.length > 0) {
+      requestAnimationFrame(() => {
+        bottomRef.current?.scrollIntoView({ behavior: "instant" });
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only on mount
+
   // New message added → smooth scroll
   useEffect(() => {
     if (messages.length > prevMessagesLen.current && isStuckToBottom.current) {
