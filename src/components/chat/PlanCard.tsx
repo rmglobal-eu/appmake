@@ -57,11 +57,11 @@ function parsePlanContent(content: string): {
 
       const heading = h2Match[1].trim();
       const lower = heading.toLowerCase();
-      const type: PlanSection["type"] = lower.includes("build") || lower.includes("byg")
+      const type: PlanSection["type"] = lower.includes("build")
         ? "build"
-        : lower.includes("approach") || lower.includes("tilgang") || lower.includes("strategi")
+        : lower.includes("approach")
           ? "approach"
-          : lower.includes("change") || lower.includes("ændr") || lower.includes("fil")
+          : lower.includes("change") || lower.includes("file")
             ? "changes"
             : lower.includes("detail") || lower.includes("key")
               ? "details"
@@ -99,9 +99,9 @@ function parsePlanContent(content: string): {
     if (section.type === "changes") {
       for (const item of section.items) {
         const clean = item.replace(/`/g, "").trim();
-        if (/\b(new|ny|opret|create|add|tilføj)\b/i.test(item)) {
+        if (/\b(new|create|add)\b/i.test(item)) {
           newFiles.push(clean);
-        } else if (/\b(modif|ændr|updat|opdater|edit|redig)\b/i.test(item)) {
+        } else if (/\b(modif|updat|edit)\b/i.test(item)) {
           modifiedFiles.push(clean);
         } else {
           modifiedFiles.push(clean);
@@ -214,14 +214,14 @@ export function PlanCard({
             </h3>
             <p className="text-[11px] text-white/40 mt-0.5">
               {isStreaming
-                ? "Analyserer din forespørgsel..."
+                ? "Analyzing your request..."
                 : resolved === "approved"
-                  ? "Godkendt — bygger nu"
+                  ? "Approved — building now"
                   : resolved === "rejected"
-                    ? "Afvist"
+                    ? "Rejected"
                     : parsed.summary
                       ? parsed.summary.slice(0, 80) + (parsed.summary.length > 80 ? "..." : "")
-                      : "Klar til godkendelse"}
+                      : "Ready for approval"}
             </p>
           </div>
         </div>
@@ -242,14 +242,14 @@ export function PlanCard({
             <div className="flex items-center gap-1.5 rounded-full bg-violet-500/10 px-2.5 py-1">
               <FileCode2 className="h-3 w-3 text-violet-400" />
               <span className="text-[11px] text-violet-300/80">
-                {totalFiles} {totalFiles === 1 ? "fil" : "filer"}
+                {totalFiles} {totalFiles === 1 ? "file" : "files"}
               </span>
             </div>
           )}
           {parsed.sections.find((s) => s.type === "approach") && (
             <div className="flex items-center gap-1.5 rounded-full bg-blue-500/10 px-2.5 py-1">
               <Zap className="h-3 w-3 text-blue-400" />
-              <span className="text-[11px] text-blue-300/80">Plan klar</span>
+              <span className="text-[11px] text-blue-300/80">Plan ready</span>
             </div>
           )}
         </div>
@@ -284,7 +284,7 @@ export function PlanCard({
             ) : (
               <ChevronDown className="h-3 w-3" />
             )}
-            {showDetails ? "Skjul detaljer" : "Vis tekniske detaljer"}
+            {showDetails ? "Hide details" : "Show technical details"}
           </button>
 
           {showDetails && (
@@ -324,7 +324,7 @@ export function PlanCard({
         <div className="flex items-center gap-2 px-4 pb-3">
           <span className="inline-block h-4 w-0.5 animate-pulse rounded-full bg-violet-500" />
           <span className="text-[11px] text-violet-300/40">
-            Skriver plan...
+            Writing plan...
           </span>
         </div>
       )}
@@ -337,7 +337,7 @@ export function PlanCard({
             onClick={onApprove}
           >
             <Rocket className="h-4 w-4" />
-            Godkend & Byg
+            Approve & Build
           </button>
           <button
             className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-xs font-medium text-white/30 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200"

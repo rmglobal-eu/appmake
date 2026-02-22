@@ -9,20 +9,20 @@ interface PreviewLoadingScreenProps {
 }
 
 const STEPS = [
-  { key: "generating", label: "Skriver kode", emoji: "~" },
-  { key: "booting", label: "Starter miljø", emoji: "~" },
-  { key: "mounting", label: "Forbereder filer", emoji: "~" },
-  { key: "installing", label: "Installerer pakker", emoji: "~" },
-  { key: "starting", label: "Starter dev server", emoji: "~" },
-  { key: "bundling", label: "Bundler", emoji: "~" },
+  { key: "generating", label: "Writing code", emoji: "~" },
+  { key: "booting", label: "Starting environment", emoji: "~" },
+  { key: "mounting", label: "Preparing files", emoji: "~" },
+  { key: "installing", label: "Installing packages", emoji: "~" },
+  { key: "starting", label: "Starting dev server", emoji: "~" },
+  { key: "bundling", label: "Bundling", emoji: "~" },
 ] as const;
 
 const FRIENDLY_MESSAGES = [
-  "Vi bygger noget fedt sammen",
-  "Din app tager form",
-  "Magien sker lige nu",
-  "Snart klar til dig",
-  "Hvert pixel tæller",
+  "Building something great together",
+  "Your app is taking shape",
+  "The magic is happening now",
+  "Almost ready for you",
+  "Every pixel counts",
 ];
 
 function getActiveStep(status: string): number {
@@ -129,7 +129,7 @@ export function PreviewLoadingScreen({
           className="text-[15px] text-white/35 mb-8 loader-handwriting"
           style={{ fontFamily: "var(--font-hand)" }}
         >
-          {isIdle ? "Klar til at skabe noget fedt" : friendlyMessage}
+          {isIdle ? "Ready to create something great" : friendlyMessage}
         </p>
 
         {/* Glass card with status */}
@@ -154,7 +154,7 @@ export function PreviewLoadingScreen({
                   <div className="w-2 h-2 rounded-full bg-gradient-to-r from-pink-500 to-indigo-500" />
                 </div>
                 <span className="text-[13px] text-white/70" style={{ fontFamily: "var(--font-sans)" }}>
-                  {progressMessage || STEPS[activeStep]?.label || "Bygger"}{dots}
+                  {progressMessage || STEPS[activeStep]?.label || "Building"}{dots}
                 </span>
               </div>
 
@@ -194,7 +194,7 @@ export function PreviewLoadingScreen({
           <div className="flex items-center gap-2 loader-card-appear">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-400/60" />
             <span className="text-[12px] text-white/25" style={{ fontFamily: "var(--font-sans)" }}>
-              Skriv en besked for at komme i gang
+              Type a message to get started
             </span>
           </div>
         )}
