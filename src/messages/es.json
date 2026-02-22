@@ -480,7 +480,11 @@
     "admin": "Admin",
     "language": "Idioma",
     "languageDesc": "Selecciona tu idioma preferido para la interfaz.",
-    "preferences": "Preferencias"
+    "preferences": "Preferencias",
+    "aiSettings": "Configuración de IA",
+    "editorSettings": "Editor",
+    "notificationSettings": "Notificaciones",
+    "apiKeysSettings": "Claves API"
   },
   "billing": {
     "billingAndUsage": "Facturación y Consumo",

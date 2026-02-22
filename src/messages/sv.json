@@ -480,7 +480,11 @@
     "admin": "Admin",
     "language": "Språk",
     "languageDesc": "Välj ditt föredragna språk för gränssnittet.",
-    "preferences": "Inställningar"
+    "preferences": "Inställningar",
+    "aiSettings": "AI-inställningar",
+    "editorSettings": "Editor",
+    "notificationSettings": "Aviseringar",
+    "apiKeysSettings": "API-nycklar"
   },
   "billing": {
     "billingAndUsage": "Fakturering & Förbrukning",

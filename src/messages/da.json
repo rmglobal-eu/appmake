@@ -480,7 +480,11 @@
     "admin": "Admin",
     "language": "Sprog",
     "languageDesc": "Vælg dit foretrukne sprog for interfacet.",
-    "preferences": "Præferencer"
+    "preferences": "Præferencer",
+    "aiSettings": "AI Indstillinger",
+    "editorSettings": "Editor",
+    "notificationSettings": "Notifikationer",
+    "apiKeysSettings": "API Nøgler"
   },
   "billing": {
     "billingAndUsage": "Fakturering & Forbrug",

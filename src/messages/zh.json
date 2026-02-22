@@ -480,7 +480,11 @@
     "admin": "管理员",
     "language": "语言",
     "languageDesc": "选择你偏好的界面语言。",
-    "preferences": "偏好设置"
+    "preferences": "偏好设置",
+    "aiSettings": "AI 设置",
+    "editorSettings": "编辑器",
+    "notificationSettings": "通知",
+    "apiKeysSettings": "API 密钥"
   },
   "billing": {
     "billingAndUsage": "账单与用量",

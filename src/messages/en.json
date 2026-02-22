@@ -480,7 +480,11 @@
     "admin": "Admin",
     "language": "Language",
     "languageDesc": "Choose your preferred language for the interface.",
-    "preferences": "Preferences"
+    "preferences": "Preferences",
+    "aiSettings": "AI Settings",
+    "editorSettings": "Editor",
+    "notificationSettings": "Notifications",
+    "apiKeysSettings": "API Keys"
   },
   "billing": {
     "billingAndUsage": "Billing & Usage",

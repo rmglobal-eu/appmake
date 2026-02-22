@@ -480,7 +480,11 @@
     "admin": "المسؤول",
     "language": "اللغة",
     "languageDesc": "اختر لغتك المفضلة للواجهة.",
-    "preferences": "التفضيلات"
+    "preferences": "التفضيلات",
+    "aiSettings": "إعدادات الذكاء الاصطناعي",
+    "editorSettings": "المحرر",
+    "notificationSettings": "الإشعارات",
+    "apiKeysSettings": "مفاتيح API"
   },
   "billing": {
     "billingAndUsage": "الفوترة والاستهلاك",
