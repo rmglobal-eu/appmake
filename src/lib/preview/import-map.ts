@@ -33,20 +33,15 @@ export interface ImportMap {
 export function generateImportMap(externals: string[]): ImportMap {
   const imports: Record<string, string> = { ...ALWAYS_INCLUDED };
 
-  for (const pkg of externals) {
-    // Skip react/react-dom (already handled above)
-    if (pkg === "react" || pkg === "react-dom") continue;
+  for (const specifier of externals) {
+    // Skip react/react-dom (already handled via ALWAYS_INCLUDED with prefix mappings)
+    if (specifier === "react" || specifier === "react-dom") continue;
+    if (specifier.startsWith("react/") || specifier.startsWith("react-dom/")) continue;
 
-    // Add exact match
-    if (!imports[pkg]) {
-      imports[pkg] = esmShUrl(pkg);
-    }
-
-    // Add subpath mapping (e.g. "lucide-react/" → esm.sh/lucide-react/?external=...)
-    // This allows imports like "lucide-react/dist/esm/icons/check"
-    const subpathKey = `${pkg}/`;
-    if (!imports[subpathKey]) {
-      imports[subpathKey] = `https://esm.sh/${pkg}/?external=${EXTERNAL_PEER}&path=/`;
+    // Add exact entry for each specifier (e.g. "zustand", "zustand/middleware", "lucide-react")
+    // This avoids broken prefix mappings where query params cause backtracking errors
+    if (!imports[specifier]) {
+      imports[specifier] = esmShUrl(specifier);
     }
   }
 

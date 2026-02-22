@@ -374,16 +374,9 @@ createRoot(document.getElementById("root")).render(<EB><App /></EB>);
                 return { path: raw, namespace: "asset" };
               }
 
-              // 4. Bare npm specifier → external
+              // 4. Bare npm specifier → external (track full specifier for exact import map entries)
               if (isBareSpecifier(raw)) {
-                let pkgName = raw;
-                if (raw.startsWith("@")) {
-                  const parts = raw.split("/");
-                  pkgName = parts.slice(0, 2).join("/");
-                } else {
-                  pkgName = raw.split("/")[0];
-                }
-                externals.add(pkgName);
+                externals.add(raw);
                 return { path: raw, external: true };
               }
 
