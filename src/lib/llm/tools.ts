@@ -242,55 +242,74 @@ export const generateImageTool = tool({
       };
     }
 
-    try {
-      const res = await fetch("https://api.replicate.com/v1/models/black-forest-labs/flux-schnell/predictions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiToken}`,
-          "Content-Type": "application/json",
-          Prefer: "wait",
-        },
-        body: JSON.stringify({
-          input: {
-            prompt,
-            aspect_ratio,
-            num_outputs: 1,
+    const MAX_RETRIES = 3;
+
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        const res = await fetch("https://api.replicate.com/v1/models/black-forest-labs/flux-schnell/predictions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiToken}`,
+            "Content-Type": "application/json",
+            Prefer: "wait",
           },
-        }),
-        signal: AbortSignal.timeout(30000),
-      });
+          body: JSON.stringify({
+            input: {
+              prompt,
+              aspect_ratio,
+              num_outputs: 1,
+            },
+          }),
+          signal: AbortSignal.timeout(30000),
+        });
 
-      if (!res.ok) {
-        const errText = await res.text().catch(() => "Unknown error");
+        // Retry on 429 rate limit with exponential backoff
+        if (res.status === 429 && attempt < MAX_RETRIES) {
+          const delay = Math.pow(2, attempt + 1) * 1000; // 2s, 4s, 8s
+          await new Promise((r) => setTimeout(r, delay));
+          continue;
+        }
+
+        if (!res.ok) {
+          const errText = await res.text().catch(() => "Unknown error");
+          return {
+            url: fallbackUrl,
+            error: `Replicate API error: ${res.status} ${errText}`,
+            source: "placeholder",
+          };
+        }
+
+        const data = await res.json();
+        const imageUrl = data.output?.[0] ?? data.output;
+
+        if (!imageUrl || typeof imageUrl !== "string") {
+          return {
+            url: fallbackUrl,
+            error: "No image URL in response",
+            source: "placeholder",
+          };
+        }
+
+        return {
+          url: imageUrl,
+          source: "replicate",
+        };
+      } catch (err) {
+        if (attempt < MAX_RETRIES) {
+          const delay = Math.pow(2, attempt + 1) * 1000;
+          await new Promise((r) => setTimeout(r, delay));
+          continue;
+        }
         return {
           url: fallbackUrl,
-          error: `Replicate API error: ${res.status} ${errText}`,
+          error: `Image generation failed: ${err instanceof Error ? err.message : "Unknown error"}`,
           source: "placeholder",
         };
       }
-
-      const data = await res.json();
-      const imageUrl = data.output?.[0] ?? data.output;
-
-      if (!imageUrl || typeof imageUrl !== "string") {
-        return {
-          url: fallbackUrl,
-          error: "No image URL in response",
-          source: "placeholder",
-        };
-      }
-
-      return {
-        url: imageUrl,
-        source: "replicate",
-      };
-    } catch (err) {
-      return {
-        url: fallbackUrl,
-        error: `Image generation failed: ${err instanceof Error ? err.message : "Unknown error"}`,
-        source: "placeholder",
-      };
     }
+
+    // Should never reach here, but safety fallback
+    return { url: fallbackUrl, source: "placeholder" };
   },
 });
 
