@@ -273,7 +273,12 @@ export function DashboardSidebar({ user, projects, isOpen, onClose }: DashboardS
           )}
 
           <div className="mt-0.5 space-y-0.5">
-            <NavItem icon={LayoutGrid} label="All projects" />
+            <NavItem
+              icon={LayoutGrid}
+              label="All projects"
+              active={pathname === "/projects"}
+              onClick={() => { router.push("/projects"); onClose(); }}
+            />
             <NavItem icon={Star} label="Starred" />
             <NavItem icon={Users} label="Shared with me" />
           </div>
